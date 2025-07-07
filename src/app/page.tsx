@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,7 +20,7 @@ import type {
   Phase,
   Question,
 } from "@/types";
-import { Loader2, ArrowRight, Printer, Send } from "lucide-react";
+import { Loader2, ArrowRight, Printer, Send, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const initialQuestions: Question[] = [
@@ -108,6 +109,30 @@ export default function EncuestaIaPage() {
     }
   }, [currentQuestionIndex, phase]);
 
+  const handleReset = useCallback(() => {
+    setPhase("welcome");
+    setQuestions(initialQuestions);
+    setCurrentQuestionIndex(0);
+    setFormData({});
+    setConversationHistory([]);
+    setCurrentAnswer("");
+    setIsLoading(false);
+    setReport("");
+    setConsent(false);
+    setAnimationClass("animate-slide-in");
+
+    try {
+      localStorage.removeItem("encuesta-ia-state");
+    } catch (error) {
+      console.error("Failed to clear state from localStorage", error);
+    }
+    
+    toast({
+        title: "Diagnóstico reiniciado",
+        description: "Puedes volver a empezar desde el principio.",
+    });
+  }, [toast]);
+
 
   const handleNext = async () => {
     if (!currentAnswer.trim()) {
@@ -157,7 +182,7 @@ export default function EncuestaIaPage() {
         sector: currentData.sector,
       });
 
-      if (result.phase === 'result') {
+      if (result.phase === 'result' || history.length >= 9) {
         setPhase('report');
       } else {
         const newQuestion: Question = {
@@ -348,6 +373,14 @@ export default function EncuestaIaPage() {
         <CardContent className="p-6 sm:p-10 min-h-[350px] flex items-center justify-center">
           {renderContent()}
         </CardContent>
+        {phase !== 'welcome' && (
+          <CardFooter className="justify-center border-t p-6">
+              <Button variant="link" onClick={handleReset}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Reiniciar diagnóstico
+              </Button>
+          </CardFooter>
+        )}
       </Card>
       <footer className="mt-4 text-xs text-foreground/50">
         Una herramienta para detectar ineficiencias.
