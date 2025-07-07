@@ -45,7 +45,7 @@ const prompt = ai.definePrompt({
 The survey progresses through several phases:
 - 'basic_info': Gathering initial information about the user and their company.
 - 'problem_detection': Identifying specific tasks that are inefficient.
-- 'time_calculation': Quantifying the time lost on these tasks. This is where you should ask questions that help quantify time or frequency.
+- 'time_calculation': Quantifying the time lost on these tasks. In this phase, your goal is to determine the frequency (how often a task is done) and duration (how long it takes) for each inefficient task identified earlier. **You MUST focus on one task at a time and ask for frequency and duration in separate questions.**
 - 'context_data': Gathering more context about the business.
 - 'result': The survey is complete.
 
@@ -66,14 +66,15 @@ Instructions:
 1.  Look at the \`currentPhase\` and the \`conversationHistory\`.
 2.  If the current phase's goal is complete, transition to the next phase.
 3.  Generate a relevant, detailed question for the new phase.
-4.  Determine the best input \`type\` for the question:
+4.  **IMPORTANT: Ask for only one piece of information at a time. Never ask for two things in one question (e.g., do not ask for frequency AND duration at once).**
+5.  Determine the best input \`type\` for the question:
     - 'text': For short, open-ended answers.
     - 'textarea': For longer, descriptive answers.
-    - 'number': For questions that require a numeric answer (e.g., "How many times a week?").
-    - 'multiple-choice': For questions where the user should select from a predefined list (e.g., frequency). The user can only select ONE option.
+    - 'number': For questions that require a numeric answer (e.g., "How many hours does it take?"). Ideal for duration.
+    - 'multiple-choice': For questions where the user should select from a predefined list. **Ideal for frequency** (e.g., ["Diariamente", "Semanalmente", "Mensualmente"]). The user can only select ONE option.
     - 'checkbox-suggestions': Use this specifically when asking the user to identify multiple inefficient tasks. Provide a list of 3-5 common tasks in the 'options' field based on the business context. The question should ask the user to select the relevant tasks and add any others. The user can select multiple options and also add their own.
-5.  If you choose \`type: 'multiple-choice'\` or \`type: 'checkbox-suggestions'\`, you MUST provide an \`options\` array with relevant choices.
-6.  After you have gathered enough information across all phases (usually after 6-8 questions in total, including the initial ones), you MUST transition to the 'result' phase. To do this, set the 'phase' field in your output to 'result' and you can leave the other fields empty.
+6.  If you choose \`type: 'multiple-choice'\` or \`type: 'checkbox-suggestions'\`, you MUST provide an \`options\` array with relevant choices.
+7.  After you have gathered enough information across all phases (usually after 8-10 questions in total, including the initial ones), you MUST transition to the 'result' phase. To do this, set the 'phase' field in your output to 'result' and you can leave the other fields empty.
 
 Return the generated question, its corresponding phase, type, and options (if applicable).
 Output should be in JSON format.
@@ -89,7 +90,7 @@ const generateContextAwareQuestionFlow = ai.defineFlow(
   },
   async input => {
     // Hard limit to prevent infinite loops. The prompt should handle this gracefully before this limit is reached.
-    if (input.conversationHistory.length >= 10) {
+    if (input.conversationHistory.length >= 15) {
       return { question: '', phase: 'result', type: 'text' };
     }
     const {output} = await prompt(input);
