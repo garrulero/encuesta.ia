@@ -136,10 +136,7 @@ export default function EncuestaIaPage() {
 
 
   const handleNext = async () => {
-    const q = questions[currentQuestionIndex];
-    // For multiple choice, the answer is set on selection, and this is called via useEffect.
-    // The check is still valid.
-    if (!currentAnswer.trim() && q.type !== 'multiple-choice') {
+    if (!currentAnswer.trim()) {
       toast({
         title: "Respuesta requerida",
         description: "Por favor, introduce una respuesta.",
@@ -167,18 +164,6 @@ export default function EncuestaIaPage() {
       await fetchNextQuestion(newHistory, newFormData);
     }
   };
-
-  // Auto-advance for multiple-choice questions
-  useEffect(() => {
-    const q = questions[currentQuestionIndex];
-    if (q?.type === 'multiple-choice' && currentAnswer && !isLoading) {
-      const timer = setTimeout(() => {
-        handleNext();
-      }, 300); // Delay for UX to show selection
-      return () => clearTimeout(timer);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAnswer, isLoading]);
   
   const triggerAnimation = (nextIndex: number) => {
     setAnimationClass("animate-slide-out");
@@ -319,23 +304,21 @@ export default function EncuestaIaPage() {
             />
           )}
 
-          {q.type !== 'multiple-choice' && (
-            <div className="mt-8 flex justify-end">
-              <Button onClick={handleNext} disabled={isLoading || !currentAnswer.trim()} size="lg">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Pensando...
-                  </>
-                ) : (
-                  <>
-                    Siguiente
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+          <div className="mt-8 flex justify-end">
+            <Button onClick={handleNext} disabled={isLoading || !currentAnswer.trim()} size="lg">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Pensando...
+                </>
+              ) : (
+                <>
+                  Siguiente
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       );
     }
