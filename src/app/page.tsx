@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getAIQuestion, getAIReport } from "./actions";
 import type {
   Conversation,
@@ -135,7 +136,10 @@ export default function EncuestaIaPage() {
 
 
   const handleNext = async () => {
-    if (!currentAnswer.trim()) {
+    const q = questions[currentQuestionIndex];
+    // For multiple choice, the answer is set on selection, and this is called via useEffect.
+    // The check is still valid.
+    if (!currentAnswer.trim() && q.type !== 'multiple-choice') {
       toast({
         title: "Respuesta requerida",
         description: "Por favor, introduce una respuesta.",
@@ -163,6 +167,18 @@ export default function EncuestaIaPage() {
       await fetchNextQuestion(newHistory, newFormData);
     }
   };
+
+  // Auto-advance for multiple-choice questions
+  useEffect(() => {
+    const q = questions[currentQuestionIndex];
+    if (q?.type === 'multiple-choice' && currentAnswer && !isLoading) {
+      const timer = setTimeout(() => {
+        handleNext();
+      }, 300); // Delay for UX to show selection
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAnswer, isLoading]);
   
   const triggerAnimation = (nextIndex: number) => {
     setAnimationClass("animate-slide-out");
@@ -182,14 +198,15 @@ export default function EncuestaIaPage() {
         sector: currentData.sector,
       });
 
-      if (result.phase === 'result' || history.length >= 9) {
+      if (result.phase === 'result' || !result.question || history.length >= 9) {
         setPhase('report');
       } else {
         const newQuestion: Question = {
             id: `q-ai-${questions.length + 1}`,
             text: result.question,
             phase: result.phase,
-            type: result.phase === 'context_data' && result.question.toLowerCase().includes('describ') ? 'textarea' : 'text',
+            type: result.type,
+            options: result.options,
             key: `custom-${result.phase}-${questions.length + 1}`
         }
         setQuestions([...questions, newQuestion]);
@@ -262,6 +279,7 @@ export default function EncuestaIaPage() {
           <Label htmlFor={q.id} className="block text-xl mb-6 text-left">
             {q.text}
           </Label>
+          
           {q.type === 'textarea' ? (
             <Textarea
               id={q.id}
@@ -272,6 +290,22 @@ export default function EncuestaIaPage() {
               className="min-h-[120px]"
               disabled={isLoading}
             />
+          ) : q.type === 'multiple-choice' ? (
+            <RadioGroup
+                value={currentAnswer}
+                onValueChange={setCurrentAnswer}
+                disabled={isLoading}
+                className="space-y-3"
+            >
+                {q.options?.map((option) => (
+                <div key={option} className="flex items-center space-x-3">
+                    <RadioGroupItem value={option} id={`${q.id}-${option}`} />
+                    <Label htmlFor={`${q.id}-${option}`} className="font-normal text-base cursor-pointer">
+                        {option}
+                    </Label>
+                </div>
+                ))}
+            </RadioGroup>
           ) : (
             <Input
               id={q.id}
@@ -284,21 +318,24 @@ export default function EncuestaIaPage() {
               onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleNext()}
             />
           )}
-          <div className="mt-8 flex justify-end">
-            <Button onClick={handleNext} disabled={isLoading} size="lg">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Pensando...
-                </>
-              ) : (
-                <>
-                  Siguiente
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </div>
+
+          {q.type !== 'multiple-choice' && (
+            <div className="mt-8 flex justify-end">
+              <Button onClick={handleNext} disabled={isLoading || !currentAnswer.trim()} size="lg">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Pensando...
+                  </>
+                ) : (
+                  <>
+                    Siguiente
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       );
     }
@@ -343,7 +380,7 @@ export default function EncuestaIaPage() {
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end">
-                            <Button onClick={handleGenerateReport} disabled={isLoading || !consent} size="lg">
+                            <Button onClick={handleGenerateReport} disabled={isLoading || !consent || !formData.userEmail} size="lg">
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
