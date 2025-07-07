@@ -27,8 +27,8 @@ const GenerateContextAwareQuestionOutputSchema = z.object({
   question: z.string().describe('The generated context-aware question.'),
   phase: z.enum(['basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result'])
     .describe('The phase of the generated question.'),
-  type: z.enum(['text', 'textarea', 'number', 'multiple-choice']).describe('The type of input field to show for this question.'),
-  options: z.array(z.string()).optional().describe('A list of options for multiple-choice questions. Only provide if type is "multiple-choice".'),
+  type: z.enum(['text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions']).describe('The type of input field to show for this question.'),
+  options: z.array(z.string()).optional().describe('A list of options for multiple-choice or checkbox-suggestions questions.'),
 });
 export type GenerateContextAwareQuestionOutput = z.infer<typeof GenerateContextAwareQuestionOutputSchema>;
 
@@ -70,8 +70,9 @@ Instructions:
     - 'text': For short, open-ended answers.
     - 'textarea': For longer, descriptive answers.
     - 'number': For questions that require a numeric answer (e.g., "How many times a week?").
-    - 'multiple-choice': For questions where the user should select from a predefined list. For example, for frequency ("Daily", "Weekly", "Monthly") or for ranges of time. Make the options clear and easy to choose.
-5.  If you choose \`type: 'multiple-choice'\`, you MUST provide an \`options\` array with relevant choices.
+    - 'multiple-choice': For questions where the user should select from a predefined list (e.g., frequency). The user can only select ONE option.
+    - 'checkbox-suggestions': Use this specifically when asking the user to identify multiple inefficient tasks. Provide a list of 3-5 common tasks in the 'options' field based on the business context. The question should ask the user to select the relevant tasks and add any others. The user can select multiple options and also add their own.
+5.  If you choose \`type: 'multiple-choice'\` or \`type: 'checkbox-suggestions'\`, you MUST provide an \`options\` array with relevant choices.
 6.  After you have gathered enough information across all phases (usually after 6-8 questions in total, including the initial ones), you MUST transition to the 'result' phase. To do this, set the 'phase' field in your output to 'result' and you can leave the other fields empty.
 
 Return the generated question, its corresponding phase, type, and options (if applicable).

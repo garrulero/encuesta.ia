@@ -56,6 +56,7 @@ export default function EncuestaIaPage() {
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [conversationHistory, setConversationHistory] = useState<Conversation>([]);
   const [currentAnswer, setCurrentAnswer] = useState("");
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState("");
   const [consent, setConsent] = useState(false);
@@ -117,6 +118,7 @@ export default function EncuestaIaPage() {
     setFormData({});
     setConversationHistory([]);
     setCurrentAnswer("");
+    setSelectedOptions([]);
     setIsLoading(false);
     setReport("");
     setConsent(false);
@@ -136,27 +138,37 @@ export default function EncuestaIaPage() {
 
 
   const handleNext = async () => {
-    if (!currentAnswer.trim()) {
+    const currentQuestion = questions[currentQuestionIndex];
+    let finalAnswer = "";
+
+    if (currentQuestion.type === 'checkbox-suggestions') {
+        const customTasks = currentAnswer.trim().split('\n').filter(task => task.trim() !== '');
+        const allTasks = [...new Set([...selectedOptions, ...customTasks])];
+        finalAnswer = allTasks.join(', ');
+    } else {
+        finalAnswer = currentAnswer.trim();
+    }
+    
+    if (!finalAnswer) {
       toast({
         title: "Respuesta requerida",
-        description: "Por favor, introduce una respuesta.",
+        description: "Por favor, selecciona una opción o escribe una respuesta.",
         variant: "destructive",
       });
       return;
     }
 
-    const currentQuestion = questions[currentQuestionIndex];
-    
-    const newFormData = { ...formData, [currentQuestion.key]: currentAnswer };
+    const newFormData = { ...formData, [currentQuestion.key]: finalAnswer };
     setFormData(newFormData);
 
     const newHistory: Conversation = [
       ...conversationHistory,
-      { question: currentQuestion.text, answer: currentAnswer },
+      { question: currentQuestion.text, answer: finalAnswer },
     ];
     setConversationHistory(newHistory);
     
     setCurrentAnswer("");
+    setSelectedOptions([]);
 
     if (currentQuestionIndex < questions.length - 1) {
       triggerAnimation(currentQuestionIndex + 1);
@@ -259,6 +271,12 @@ export default function EncuestaIaPage() {
 
     if (phase === "survey") {
       const q = questions[currentQuestionIndex];
+      const isNextDisabled = isLoading || (
+        q.type === 'checkbox-suggestions' 
+            ? selectedOptions.length === 0 && !currentAnswer.trim()
+            : !currentAnswer.trim()
+      );
+
       return (
         <div key={q.id} className={`w-full ${animationClass}`}>
           <Label htmlFor={q.id} className="block text-xl mb-6 text-left">
@@ -291,7 +309,42 @@ export default function EncuestaIaPage() {
                 </div>
                 ))}
             </RadioGroup>
-          ) : (
+          ) : q.type === 'checkbox-suggestions' ? (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {q.options?.map((option) => (
+                  <div key={option} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`${q.id}-${option}`}
+                      checked={selectedOptions.includes(option)}
+                      onCheckedChange={(checked) => {
+                        setSelectedOptions((prev) =>
+                          checked
+                            ? [...prev, option]
+                            : prev.filter((item) => item !== option)
+                        );
+                      }}
+                      disabled={isLoading}
+                    />
+                    <Label
+                      htmlFor={`${q.id}-${option}`}
+                      className="font-normal text-base cursor-pointer"
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <Textarea
+                id={`${q.id}-custom`}
+                value={currentAnswer}
+                onChange={(e) => setCurrentAnswer(e.target.value)}
+                placeholder="Añade aquí otras tareas..."
+                className="min-h-[100px]"
+                disabled={isLoading}
+              />
+            </div>
+           ) : (
             <Input
               id={q.id}
               ref={inputRef as React.Ref<HTMLInputElement>}
@@ -300,12 +353,12 @@ export default function EncuestaIaPage() {
               onChange={(e) => setCurrentAnswer(e.target.value)}
               placeholder="Tu respuesta..."
               disabled={isLoading}
-              onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleNext()}
+              onKeyDown={(e) => e.key === 'Enter' && !isNextDisabled && handleNext()}
             />
           )}
 
           <div className="mt-8 flex justify-end">
-            <Button onClick={handleNext} disabled={isLoading || !currentAnswer.trim()} size="lg">
+            <Button onClick={handleNext} disabled={isNextDisabled} size="lg">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
