@@ -38,28 +38,36 @@ const prompt = ai.definePrompt({
   name: 'generateContextAwareQuestionPrompt',
   input: {schema: GenerateContextAwareQuestionInputSchema},
   output: {schema: GenerateContextAwareQuestionOutputSchema},
-  prompt: `You are an AI assistant designed to generate survey questions for a business inefficiency assessment tool called encuesta.ia.
+  prompt: `You are an AI assistant designed to generate survey questions for a business inefficiency assessment tool called encuesta.ia. Your goal is to identify areas where a small business can improve its processes.
 
-  The goal is to create a conversational experience that feels natural and adapts to the user's responses.
-  All questions should be in Spanish (castellano).
+The survey progresses through several phases:
+- 'basic_info': Gathering initial information about the user and their company.
+- 'problem_detection': Identifying specific tasks that are inefficient.
+- 'time_calculation': Quantifying the time lost on these tasks.
+- 'context_data': Gathering more context about the business.
+- 'result': The survey is complete.
 
-  Here's the conversation history so far:
-  {{#each conversationHistory}}
-    Question: {{{this.question}}}
-    Answer: {{{this.answer}}}
-  {{/each}}
+Your task is to generate the next question based on the conversation history. You must also decide which phase the new question belongs to.
 
-  Current Phase: {{{currentPhase}}}
-  Sector: {{#if sector}}{{{sector}}}{{else}}Unknown{{/if}}
+All questions should be in Spanish (castellano). Maintain a natural, conversational tone. Avoid technical jargon.
 
-  Generate the next question, taking into account the conversation history, current phase, and sector (if available). The question should be relevant to the previous answers and maintain a conversational tone.  Avoid technical jargon and focus on the user's daily tasks and experiences.
+Here's the conversation history so far:
+{{#each conversationHistory}}
+  Question: {{{this.question}}}
+  Answer: {{{this.answer}}}
+{{/each}}
 
-  Ensure the question is clear, concise, and easy to understand. Consider the user's previous answers to ask more specific and relevant questions.
+Current Phase: {{{currentPhase}}}
+Sector: {{#if sector}}{{{sector}}}{{else}}Unknown{{/if}}
 
-  The question should be in Spanish (castellano), using simple and natural language.  Avoid anglicisms.
+Instructions:
+1.  Look at the \`currentPhase\` and the \`conversationHistory\`.
+2.  If the current phase's goal is complete, transition to the next phase.
+3.  Generate a relevant question for the new phase.
+4.  After you have gathered enough information across all phases (usually after 5-7 questions in total, including the initial ones), you MUST transition to the 'result' phase. To do this, set the 'phase' field in your output to 'result'. You can leave the 'question' field empty.
 
-  Return the generated question and what phase it belongs to.
-  Output should be in JSON format.
+Return the generated question and its corresponding phase.
+Output should be in JSON format.
   `,
   model: 'googleai/gemini-2.5-flash',
 });
@@ -71,6 +79,10 @@ const generateContextAwareQuestionFlow = ai.defineFlow(
     outputSchema: GenerateContextAwareQuestionOutputSchema,
   },
   async input => {
+    // Hard limit to prevent infinite loops. The prompt should handle this gracefully before this limit is reached.
+    if (input.conversationHistory.length >= 10) {
+      return { question: '', phase: 'result' };
+    }
     const {output} = await prompt(input);
     return output!;
   }
