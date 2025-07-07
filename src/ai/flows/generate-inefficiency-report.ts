@@ -22,7 +22,7 @@ const GenerateInefficiencyReportInputSchema = z.object({
 export type GenerateInefficiencyReportInput = z.infer<typeof GenerateInefficiencyReportInputSchema>;
 
 const GenerateInefficiencyReportOutputSchema = z.object({
-  report: z.string().describe('A detailed report summarizing detected inefficiencies, estimated time savings, and areas for improvement.'),
+  report: z.string().describe('A detailed report summarizing detected inefficiencies, estimated time savings, and areas for improvement. It must include monthly hours lost and an estimated monthly cost.'),
 });
 export type GenerateInefficiencyReportOutput = z.infer<typeof GenerateInefficiencyReportOutputSchema>;
 
@@ -34,26 +34,43 @@ const prompt = ai.definePrompt({
   name: 'generateInefficiencyReportPrompt',
   input: {schema: GenerateInefficiencyReportInputSchema},
   output: {schema: GenerateInefficiencyReportOutputSchema},
-  prompt: `Eres un consultor de negocios experto en identificar ineficiencias en empresas locales.
+  prompt: `Eres un consultor de negocios experto en identificar ineficiencias en empresas locales, trabajando para GoiLab. Tu objetivo es ayudar a las empresas a ver el tiempo y dinero que pierden y cómo GoiLab puede ayudarles a recuperarlo.
 
-  A partir de la siguiente información, genera un informe detallado en español que resuma las ineficiencias detectadas, estime el tiempo ahorrado y sugiera áreas de mejora para la empresa.
+A partir de la siguiente información, genera un informe detallado en español. Este informe es la conclusión del diagnóstico interactivo de encuesta.ia.
 
-  Nombre de la empresa: {{{companyName}}}
-  Nombre del usuario: {{{userName}}}
-  Cargo del usuario: {{{userRole}}}
-  Tareas ineficientes identificadas: {{#each inefficientTasks}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
-  Tiempo perdido semanalmente: {{{weeklyTimeLost}}} horas
-  Descripción de la empresa: {{{companyDescription}}}
-  Comentarios adicionales: {{{comments}}}
+Información de la empresa:
+- Nombre de la empresa: {{{companyName}}}
+- Contacto: {{{userName}}}, {{{userRole}}}
+- Tareas ineficientes identificadas: {{#each inefficientTasks}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+- Tiempo total perdido semanalmente: {{{weeklyTimeLost}}} horas
+- Descripción de la empresa: {{{companyDescription}}}
+- Comentarios adicionales: {{{comments}}}
 
-  El informe debe estar escrito en un tono cercano y profesional, evitando tecnicismos y centrándose en los beneficios prácticos para la empresa.
-  Nunca mencionar “automatización”, “transformación digital”, “consultoría”, “IA avanzada”, etc.
-  Siempre hablar de forma natural sobre tareas, organización, formas de trabajar, pérdida de tiempo, etc.
-  El informe debe incluir:
-  - Un resumen de las ineficiencias detectadas.
-  - Una estimación del tiempo perdido semanalmente debido a estas ineficiencias.
-  - Sugerencias concretas para mejorar la eficiencia en cada una de las áreas identificadas.
-  - Un mensaje final que motive a la empresa a tomar medidas para optimizar su gestión.
+Estructura y contenido del informe:
+
+1.  **Introducción Agradecida y Planteamiento del Problema:**
+    - Empieza agradeciendo a {{{userName}}} por su tiempo.
+    - Menciona que el informe revelará las horas que se están "escapando" cada semana y, lo más importante, cómo optimizar ese tiempo.
+
+2.  **Análisis de Ineficiencias:**
+    - Presenta un resumen claro de las tareas ineficientes detectadas.
+
+3.  **Cuantificación del Impacto (Tiempo y Dinero):**
+    - Calcula el tiempo perdido mensualmente (multiplica las horas semanales por 4.33).
+    - **MUY IMPORTANTE:** Calcula el coste económico mensual de este tiempo perdido. Para ello, utiliza una **estimación conservadora de 25€ por hora de empleado**. Es crucial que menciones que esto es una estimación para que puedan hacerse una idea del impacto económico.
+    - Presenta estas cifras de forma impactante. Por ejemplo: "Esto se traduce en aproximadamente X horas al mes, lo que podría equivaler a más de Y€ mensuales en costes de oportunidad y salarios."
+
+4.  **Sugerencias de Optimización:**
+    - Para cada tarea ineficiente, ofrece sugerencias concretas y prácticas sobre cómo mejorarla.
+    - Habla de forma natural sobre mejorar la organización, las formas de trabajar y de simplificar procesos.
+    - **Evita terminología compleja** como "automatización", "transformación digital", "consultoría", "IA avanzada".
+
+5.  **Llamada a la Acción para GoiLab:**
+    - Concluye el informe con un mensaje motivador.
+    - El objetivo final es que contacten a GoiLab. Posiciona a GoiLab como el socio experto que puede ayudarles a implementar estas mejoras y a recuperar esas horas y dinero.
+    - Usa una frase como: "En GoiLab estamos especializados en ayudar a empresas como la tuya a transformar estas áreas de mejora en resultados reales. ¿Hablamos de cómo podemos recuperar este tiempo para tu negocio?".
+
+El tono debe ser cercano, profesional y, sobre todo, revelador y persuasivo. Quieres que {{{userName}}} termine de leer y piense: "Necesito llamar a GoiLab".
 `,
   model: 'googleai/gemini-2.5-flash',
 });
