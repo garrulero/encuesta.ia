@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['"IBM Plex Mono"', 'monospace'],
+        headline: ['"IBM Plex Mono"', 'monospace'],
         code: ['monospace'],
       },
       colors: {
@@ -46,7 +46,10 @@ export default {
           foreground: 'hsl(var(--destructive-foreground))',
         },
         border: 'hsl(var(--border))',
+        'border-light': 'hsl(var(--border-light))',
+        'border-dark': 'hsl(var(--border-dark))',
         input: 'hsl(var(--input))',
+        'input-border': 'hsl(var(--input-border))',
         ring: 'hsl(var(--ring))',
         chart: {
           '1': 'hsl(var(--chart-1))',
@@ -54,16 +57,6 @@ export default {
           '3': 'hsl(var(--chart-3))',
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
-        },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
         },
       },
       borderRadius: {
@@ -88,10 +81,20 @@ export default {
             height: '0',
           },
         },
+        'slide-in': {
+            '0%': { transform: 'translateX(100%)', opacity: '0' },
+            '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        'slide-out': {
+            '0%': { transform: 'translateX(0)', opacity: '1' },
+            '100%': { transform: 'translateX(-100%)', opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'slide-in': 'slide-in 0.5s ease-out forwards',
+        'slide-out': 'slide-out 0.5s ease-out forwards',
       },
     },
   },
