@@ -14,6 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getAIQuestion, getAIReport } from "./actions";
 import type {
   Conversation,
@@ -58,6 +65,7 @@ export default function EncuestaIaPage() {
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Un momento, por favor...");
   const [report, setReport] = useState("");
   const [consent, setConsent] = useState(false);
   const [animationClass, setAnimationClass] = useState("animate-slide-in");
@@ -186,6 +194,7 @@ export default function EncuestaIaPage() {
   }
 
   const fetchNextQuestion = async (history: Conversation, currentData: Partial<FormData>) => {
+    setLoadingMessage("La IA está buscando la mejor pregunta para ti...");
     setIsLoading(true);
     try {
       const currentPhase = questions[currentQuestionIndex]?.phase ?? 'basic_info';
@@ -231,6 +240,7 @@ export default function EncuestaIaPage() {
         return;
     }
 
+    setLoadingMessage("Estamos generando tu informe personalizado. Esto puede tardar unos segundos...");
     setIsLoading(true);
     try {
         const reportInput = {
@@ -359,17 +369,8 @@ export default function EncuestaIaPage() {
 
           <div className="mt-8 flex justify-end">
             <Button onClick={handleNext} disabled={isNextDisabled} size="lg">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Pensando...
-                </>
-              ) : (
-                <>
-                  Siguiente
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
+              Siguiente
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -417,17 +418,8 @@ export default function EncuestaIaPage() {
                         </div>
                         <div className="mt-8 flex justify-end">
                             <Button onClick={handleGenerateReport} disabled={isLoading || !consent || !formData.userEmail} size="lg">
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Generando...
-                                    </>
-                                ) : (
-                                    <>
-                                        Generar mi informe
-                                        <Send className="ml-2 h-4 w-4" />
-                                    </>
-                                )}
+                                Generar mi informe
+                                <Send className="ml-2 h-4 w-4" />
                             </Button>
                         </div>
                     </div>
@@ -439,6 +431,20 @@ export default function EncuestaIaPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-accent p-4 sm:p-8">
+      <AlertDialog open={isLoading}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              Procesando...
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center pt-2">
+              {loadingMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>encuesta.ia - Diagnóstico interactivo v1.0</CardTitle>
