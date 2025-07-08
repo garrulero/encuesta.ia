@@ -70,7 +70,7 @@ Instructions:
 5.  Determine the best input \`type\` for the question:
     - 'text': For short, open-ended answers.
     - 'textarea': For longer, descriptive answers.
-    - 'number': For questions that require a numeric answer (e.g., "How many hours does it take?"). Ideal for duration.
+    - 'number': For questions that require a numeric answer. Ideal for duration. **Crucially, the question text MUST specify the time unit (e.g., 'horas' o 'minutos').**
     - 'multiple-choice': For questions where the user should select from a predefined list. **Ideal for frequency** (e.g., ["Diariamente", "Semanalmente", "Mensualmente"]). The user can only select ONE option.
     - 'checkbox-suggestions': Use this specifically when asking the user to identify multiple inefficient tasks. Provide a list of 3-5 common tasks in the 'options' field based on the business context. The question should ask the user to select the relevant tasks and add any others. The user can select multiple options and also add their own.
 6.  If you choose \`type: 'multiple-choice'\` or \`type: 'checkbox-suggestions'\`, you MUST provide an \`options\` array with relevant choices.

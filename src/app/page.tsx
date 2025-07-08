@@ -247,10 +247,7 @@ export default function EncuestaIaPage() {
             companyName: formData.companyName || 'N/A',
             userName: formData.userName || 'N/A',
             userRole: formData.userRole || 'N/A',
-            inefficientTasks: formData.inefficientTasks || [],
-            weeklyTimeLost: formData.weeklyTimeLost || 0,
-            companyDescription: formData.companyDescription || 'No proporcionada',
-            comments: formData.comments,
+            conversationHistory: conversationHistory,
         };
         const result = await getAIReport(reportInput);
         setReport(result.report);
