@@ -220,11 +220,16 @@ export default function EncuestaIaPage() {
       }
     } catch (error) {
       console.error("Error fetching next question:", error);
-      toast({
-        title: "Error de conexión",
-        description: "No se pudo obtener la siguiente pregunta. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      // Continue with a fallback question instead of showing error
+      const fallbackQuestion: Question = {
+          id: `q-fallback-${questions.length + 1}`,
+          text: "¿Hay algún proceso en tu empresa que crees que podría ser más eficiente?",
+          phase: 'problem_detection',
+          type: 'textarea',
+          key: `custom-fallback-${questions.length + 1}`
+      };
+      setQuestions([...questions, fallbackQuestion]);
+      triggerAnimation(questions.length);
     } finally {
       setIsLoading(false);
     }
