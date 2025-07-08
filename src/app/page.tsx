@@ -28,7 +28,7 @@ import type {
   Phase,
   Question,
 } from "@/types";
-import { Loader2, ArrowRight, Printer, Send, RefreshCcw } from "lucide-react";
+import { Loader2, ArrowRight, Printer, Send, RefreshCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const initialQuestions: Question[] = [
@@ -261,6 +261,28 @@ export default function EncuestaIaPage() {
         setIsLoading(false);
     }
   };
+  
+  const handleDownloadData = () => {
+    const dataToSave = {
+        formData,
+        conversationHistory,
+        report,
+    };
+    const dataStr = JSON.stringify(dataToSave, null, 2);
+    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `diagnostico-encuesta-ia-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({
+        title: "Datos descargados",
+        description: "Tu diagnóstico se ha guardado como un archivo JSON.",
+    });
+  };
 
   const renderContent = () => {
     if (phase === "welcome") {
@@ -386,7 +408,11 @@ export default function EncuestaIaPage() {
                         <div className="text-left whitespace-pre-wrap p-4 border-2 border-dashed border-black bg-white max-h-96 overflow-y-auto">
                             {report}
                         </div>
-                        <div className="mt-8 flex justify-center">
+                        <div className="mt-8 flex justify-center gap-4">
+                            <Button onClick={handleDownloadData} size="lg" variant="outline">
+                                <Download className="mr-2 h-4 w-4" />
+                                Descargar datos
+                            </Button>
                             <Button onClick={() => window.print()} size="lg">
                                 <Printer className="mr-2 h-4 w-4" />
                                 Imprimir informe
