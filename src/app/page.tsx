@@ -80,46 +80,49 @@ export default function EncuestaIaPage() {
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    try {
-      const savedState = localStorage.getItem("encuesta-ia-state");
-      if (savedState) {
-        const {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedState = localStorage.getItem("encuesta-ia-state");
+        if (savedState) {
+          const {
+            phase,
+            questions,
+            currentQuestionIndex,
+            formData,
+            conversationHistory,
+            report,
+          } = JSON.parse(savedState);
+          
+          setPhase(phase || "welcome");
+          if (questions && questions.length > 0) setQuestions(questions);
+          setCurrentQuestionIndex(currentQuestionIndex || 0);
+          setFormData(formData || {});
+          setConversationHistory(conversationHistory || []);
+          if (report) setReport(report);
+        }
+      } catch (error)
+      {
+        console.error("Failed to load state from localStorage", error);
+        handleReset();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stateToSave = JSON.stringify({
           phase,
           questions,
           currentQuestionIndex,
           formData,
           conversationHistory,
-          report,
-        } = JSON.parse(savedState);
-        
-        setPhase(phase || "welcome");
-        if (questions && questions.length > 0) setQuestions(questions);
-        setCurrentQuestionIndex(currentQuestionIndex || 0);
-        setFormData(formData || {});
-        setConversationHistory(conversationHistory || []);
-        if (report) setReport(report);
+          report
+        });
+        localStorage.setItem("encuesta-ia-state", stateToSave);
+      } catch (error) {
+        console.error("Failed to save state to localStorage", error);
       }
-    } catch (error)
-    {
-      console.error("Failed to load state from localStorage", error);
-      // If state is corrupted, reset it
-      handleReset();
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const stateToSave = JSON.stringify({
-        phase,
-        questions,
-        currentQuestionIndex,
-        formData,
-        conversationHistory,
-        report
-      });
-      localStorage.setItem("encuesta-ia-state", stateToSave);
-    } catch (error) {
-      console.error("Failed to save state to localStorage", error);
     }
   }, [phase, questions, currentQuestionIndex, formData, conversationHistory, report]);
   
@@ -142,10 +145,12 @@ export default function EncuestaIaPage() {
     setConsent(false);
     setAnimationClass("animate-slide-in");
 
-    try {
-      localStorage.removeItem("encuesta-ia-state");
-    } catch (error) {
-      console.error("Failed to clear state from localStorage", error);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem("encuesta-ia-state");
+      } catch (error) {
+        console.error("Failed to clear state from localStorage", error);
+      }
     }
     
     toast({
