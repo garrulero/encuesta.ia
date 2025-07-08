@@ -218,17 +218,20 @@ export default function EncuestaIaPage() {
         setPhase('report');
       } else {
         const newQuestion: Question = {
-            id: `q-ai-${questions.length + 1}`,
+            id: `q-ai-${history.length + 1}`,
             text: result.question,
             phase: result.phase,
             type: result.type || 'text',
             options: result.options,
             optional: result.optional,
             hint: result.hint,
-            key: `custom-${result.phase}-${questions.length + 1}`
+            key: `custom-${result.phase}-${history.length + 1}`
         }
-        setQuestions([...questions, newQuestion]);
-        triggerAnimation(questions.length);
+        setQuestions(prevQuestions => {
+          const newQuestions = [...prevQuestions, newQuestion];
+          triggerAnimation(newQuestions.length - 1);
+          return newQuestions;
+        });
       }
     } catch (error) {
       console.error("Error fetching next question:", error);
