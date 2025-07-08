@@ -1,4 +1,4 @@
-// src/ai/flows/generate-context-aware-question.ts
+
 'use server';
 
 /**
@@ -48,6 +48,16 @@ const prompt = ai.definePrompt({
 
 Your entire output MUST be a single, valid JSON object. Do not include any other text, notes, or explanations.
 
+**CONTEXT OF THE CONVERSATION SO FAR:**
+Here is the history of questions and answers. Use this information to understand what has already been asked and to decide what to ask next. Do not repeat questions that have already been answered.
+
+{{#each conversationHistory}}
+- Question: {{{this.question}}}
+- Answer: {{{this.answer}}}
+{{/each}}
+
+Now, generate the next question by following these rules:
+
 ## 1. Survey Phases & Flow Control
 
 You must guide the user through these phases in order: \`basic_info\` -> \`problem_detection\` -> \`time_calculation\` -> \`context_data\` -> \`result\`.
@@ -58,18 +68,11 @@ You must guide the user through these phases in order: \`basic_info\` -> \`probl
 - **To \`context_data\`**: ONLY after you have collected BOTH frequency AND duration for ALL identified inefficient tasks.
 - **To \`result\`**: After \`context_data\` is complete, or if the conversation history exceeds 10-12 questions.
 
-## 2. Input Context
-
-You will receive the following JSON input to make decisions:
-- \`conversationHistory\`: A complete list of previous questions and answers.
-- \`currentPhase\`: The current survey phase.
-- \`sector\`: The user's business sector (if known).
-
-## 3. Personalization Rule (CRITICAL)
+## 2. Personalization Rule (CRITICAL)
 
 When personalizing the conversation (e.g., using the user's name or company name), you MUST use the exact data provided in the \`conversationHistory\`. **DO NOT invent or hallucinate names, companies, or any other data.** You must only reference the specific answers given by the user in this conversation. If the user has not provided a piece of information, you are not allowed to invent it.
 
-## 4. Output Format (JSON ONLY)
+## 3. Output Format (JSON ONLY)
 
 Your response MUST conform to this Zod schema. Descriptions are for your guidance.
 
@@ -86,7 +89,7 @@ Your response MUST conform to this Zod schema. Descriptions are for your guidanc
 }
 \`\`\`
 
-## 5. Question Generation Rules
+## 4. Question Generation Rules
 
 - **One at a time**: NEVER ask for two things at once. Frequency and duration MUST be separate questions.
 - **Question \`type\` usage**:
@@ -94,7 +97,7 @@ Your response MUST conform to this Zod schema. Descriptions are for your guidanc
   - \`multiple-choice\`: Use ONLY for frequency. Options MUST be: \`["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"]\`.
   - \`checkbox-suggestions\`: Use to identify multiple tasks. Provide suggestions and allow custom additions.
 
-## 6. Contextual Intelligence
+## 5. Contextual Intelligence
 
 - **Ambiguity**: If a user's answer is vague (e.g., "a veces", "mucho"), your next question MUST be a clarification. Set \`needsClarification: true\`.
 - **Suggestions (if \`sector\` is unknown)**: For \`checkbox-suggestions\`, use generic tasks: \`["Gestión de clientes y proveedores", "Coordinación de equipo y reuniones internas", "Realización de tareas manuales repetitivas", "Preparación de informes o presupuestos"]\`.
@@ -106,7 +109,7 @@ Your response MUST conform to this Zod schema. Descriptions are for your guidanc
 - **Software/IT**: "Reuniones de seguimiento", "Creación de documentación técnica", "Soporte técnico a usuarios", "Reporte y seguimiento de bugs".
 - **Administrativo/Consultoría**: "Atención y seguimiento de clientes", "Emisión y envío de facturas", "Elaboración de informes contables", "Preparación de propuestas comerciales".
 
-## 7. Survey Completion
+## 6. Survey Completion
 
 To end the survey, return this exact JSON object:
 \`\`\`json
