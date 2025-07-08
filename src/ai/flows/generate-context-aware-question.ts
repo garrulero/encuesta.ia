@@ -67,7 +67,7 @@ You will receive the following JSON input to make decisions:
 
 ## 3. Personalization Rule (CRITICAL)
 
-When personalizing the conversation (e.g., using the user's name or company name), you MUST use the exact data provided in the \`conversationHistory\`. **DO NOT invent or hallucinate names or companies.** For example, if the answer to "¿cuál es tu nombre?" was "Ana", you MUST use "Ana". If the answer to "¿Cómo se llama tu empresa?" was "Mi Tienda SL", you MUST use "Mi Tienda SL". Adhere strictly to the provided answers.
+When personalizing the conversation (e.g., using the user's name or company name), you MUST use the exact data provided in the \`conversationHistory\`. **DO NOT invent or hallucinate names, companies, or any other data.** You must only reference the specific answers given by the user in this conversation. If the user has not provided a piece of information, you are not allowed to invent it.
 
 ## 4. Output Format (JSON ONLY)
 
