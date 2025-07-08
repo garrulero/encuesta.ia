@@ -33,7 +33,15 @@ const GenerateContextAwareQuestionOutputSchema = z.object({
   hint: z.string().optional().describe('An example or clarification for the user.'),
   confidenceScore: z.number().optional().describe("The AI's confidence in the generated question (0-1)."),
   needsClarification: z.boolean().optional().describe('Set to true if the AI needs the user to clarify their previous answer.')
+}).refine(data => {
+    if ((data.type === 'multiple-choice' || data.type === 'checkbox-suggestions') && (!data.options || data.options.length === 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "When type is 'multiple-choice' or 'checkbox-suggestions', the 'options' array must be provided and not be empty."
 });
+
 export type GenerateContextAwareQuestionOutput = z.infer<typeof GenerateContextAwareQuestionOutputSchema>;
 
 export async function generateContextAwareQuestion(input: GenerateContextAwareQuestionInput): Promise<GenerateContextAwareQuestionOutput> {
@@ -94,8 +102,8 @@ Your response MUST conform to this Zod schema. Descriptions are for your guidanc
 - **One at a time**: NEVER ask for two things at once. Frequency and duration MUST be separate questions.
 - **Question \`type\` usage**:
   - \`number\`: The question text MUST specify the unit (e.g., "en horas", "en minutos").
-  - \`multiple-choice\`: Use ONLY for frequency. Options MUST be: \`["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"]\`.
-  - \`checkbox-suggestions\`: Use to identify multiple tasks. Provide suggestions and allow custom additions.
+  - \`multiple-choice\`: Use ONLY for frequency questions. When you use this type, you **MUST** also provide the \`options\` field with this exact array: \`["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"]\`.
+  - \`checkbox-suggestions\`: Use to identify multiple tasks. You **MUST** provide suggestions in the \`options\` field and allow custom additions.
 
 ## 5. Contextual Intelligence
 
