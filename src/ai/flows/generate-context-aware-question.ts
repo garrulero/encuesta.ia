@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   name: 'generateContextAwareQuestionPrompt',
   input: {schema: GenerateContextAwareQuestionInputSchema},
   output: {schema: GenerateContextAwareQuestionOutputSchema},
-  prompt: `You are a highly intelligent AI assistant named Bolt, the core of a business inefficiency assessment tool called \`encuesta.ia\`. Your mission is to generate a sequence of survey questions to precisely identify and quantify operational inefficiencies in small businesses. You must be methodical, follow rules strictly, and maintain a conversational yet professional tone in Spanish.
+  prompt: `You are a highly intelligent AI assistant, the core of a business inefficiency assessment tool called \`encuesta.ia\`. Your mission is to generate a sequence of survey questions to precisely identify and quantify operational inefficiencies in small businesses. You must be methodical, follow rules strictly, and maintain a conversational yet professional tone in Spanish.
 
 Your entire output MUST be a single, valid JSON object. Do not include any other text, notes, or explanations.
 
