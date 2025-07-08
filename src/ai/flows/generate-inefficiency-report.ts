@@ -64,15 +64,15 @@ Instrucciones para generar el informe en español:
     - Redondea las horas y el coste a números enteros o con un decimal para que sea fácil de leer.
 
 3.  **Estructura y Contenido del Informe:**
-    - **Introducción Agradecida:** Empieza agradeciendo a {{{userName}}}. Menciona que el informe revelará las horas que se están "escapando" y cómo la tecnología puede recuperarlas.
-    - **Resumen Visual de Ineficiencias:** **Crea un bloque de resumen destacado.** Para la tarea más crítica (la que consume más tiempo), presenta un resumen claro con:
+    - Empieza agradeciendo a {{{userName}}}. Menciona que el informe revelará las horas que se están "escapando" y cómo la tecnología puede recuperarlas.
+    - **Crea un bloque de resumen destacado.** Para la tarea más crítica (la que consume más tiempo), presenta un resumen claro con:
         -   **Tarea Crítica:** [Nombre de la tarea]
         -   **Impacto Mensual:** [X horas perdidas, ~Y€]
         -   **Recomendación Clave:** [Solución concreta de GoiLab para esta tarea]
-    - **Análisis Detallado:** Después del resumen, lista el resto de las tareas ineficientes identificadas.
-    - **La Cifra Clave (El Impacto Global):** Presenta el cálculo del tiempo y dinero perdido TOTAL de forma clara e impactante. Ejemplo: "En total, hemos detectado que estas tareas consumen aproximadamente X horas al mes, lo que supone un coste estimado de Y€ mensuales para tu negocio."
-    - **La Solución Concreta de GoiLab:** Para cada ineficiencia (incluida la del resumen), explica brevemente cómo se puede optimizar utilizando una **solución específica de GoiLab**. Por ejemplo, si el problema es la gestión de documentos, menciona una "herramienta de gestión documental inteligente". Si es la planificación, habla de un "asistente de planificación con IA". Conecta directamente el problema con una solución tangible que ofreces. Evita jerga técnica compleja.
-    - **Llamada a la Acción Directa:** Concluye con una llamada a la acción potente y directa que invite al siguiente paso. Usa una frase como: "¿Quieres que empecemos a recuperar esas X horas este mismo mes? En GoiLab, somos especialistas en transformar estas ineficiencias en ahorro real. Te proponemos una sesión de análisis gratuita y sin compromiso para mostrarte cómo."
+    - Después del resumen, lista el resto de las tareas ineficientes identificadas.
+    - Presenta el cálculo del tiempo y dinero perdido TOTAL de forma clara e impactante. Ejemplo: "En total, hemos detectado que estas tareas consumen aproximadamente X horas al mes, lo que supone un coste estimado de Y€ mensuales para tu negocio."
+    - Para cada ineficiencia (incluida la del resumen), explica brevemente cómo se puede optimizar utilizando una **solución específica de GoiLab**. Por ejemplo, si el problema es la gestión de documentos, menciona una "herramienta de gestión documental inteligente". Si es la planificación, habla de un "asistente de planificación con IA". Conecta directamente el problema con una solución tangible que ofreces. Evita jerga técnica compleja.
+    - Concluye el informe con una llamada a la acción potente y directa que invite al siguiente paso. Usa una frase como: "¿Quieres que empecemos a recuperar esas X horas este mismo mes? En GoiLab, somos especialistas en transformar estas ineficiencias en ahorro real. Te proponemos una sesión de análisis gratuita y sin compromiso para mostrarte cómo."
 
 El tono debe ser profesional, cercano y motivador. El objetivo es que {{{userName}}} lea el informe y piense: "Necesito contactar a GoiLab para solucionar esto AHORA".
 `,
