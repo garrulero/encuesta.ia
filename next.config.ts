@@ -36,6 +36,19 @@ const nextConfig: NextConfig = {
         os: false,
         path: false,
       };
+      
+      // Prevent OpenTelemetry modules from being bundled on client-side
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@opentelemetry/api': false,
+        '@opentelemetry/core': false,
+        '@opentelemetry/exporter-jaeger': false,
+        '@opentelemetry/exporter-zipkin': false,
+        '@opentelemetry/instrumentation': false,
+        '@opentelemetry/resources': false,
+        '@opentelemetry/sdk-node': false,
+        '@opentelemetry/auto-instrumentations-node': false,
+      };
     }
     
     // Ignore problematic modules
