@@ -75,6 +75,7 @@ export default function EncuestaIaPage() {
   const [loadingMessage, setLoadingMessage] = useState("Un momento, por favor...");
   const [report, setReport] = useState("");
   const [consent, setConsent] = useState(false);
+  const [phoneConsent, setPhoneConsent] = useState(false);
   const [animationClass, setAnimationClass] = useState("animate-slide-in");
 
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -91,6 +92,8 @@ export default function EncuestaIaPage() {
             formData,
             conversationHistory,
             report,
+            consent,
+            phoneConsent,
           } = JSON.parse(savedState);
           
           setPhase(phase || "welcome");
@@ -99,6 +102,8 @@ export default function EncuestaIaPage() {
           setFormData(formData || {});
           setConversationHistory(conversationHistory || []);
           if (report) setReport(report);
+          if (consent) setConsent(consent);
+          if (phoneConsent) setPhoneConsent(phoneConsent);
         }
       } catch (error)
       {
@@ -117,14 +122,16 @@ export default function EncuestaIaPage() {
           currentQuestionIndex,
           formData,
           conversationHistory,
-          report
+          report,
+          consent,
+          phoneConsent
         });
         localStorage.setItem("encuesta-ia-state", stateToSave);
       } catch (error) {
         console.error("Failed to save state to localStorage", error);
       }
     }
-  }, [phase, questions, currentQuestionIndex, formData, conversationHistory, report]);
+  }, [phase, questions, currentQuestionIndex, formData, conversationHistory, report, consent, phoneConsent]);
   
   useEffect(() => {
     if (phase === 'survey' && inputRef.current) {
@@ -143,6 +150,7 @@ export default function EncuestaIaPage() {
     setIsLoading(false);
     setReport("");
     setConsent(false);
+    setPhoneConsent(false);
     setAnimationClass("animate-slide-in");
 
     if (typeof window !== 'undefined') {
@@ -256,7 +264,7 @@ export default function EncuestaIaPage() {
         return;
     }
     if (!consent) {
-        toast({ title: "Consentimiento requerido", description: "Debes aceptar que te contactemos para recibir el informe.", variant: "destructive"});
+        toast({ title: "Consentimiento requerido", description: "Debes aceptar los términos para poder generar el informe.", variant: "destructive"});
         return;
     }
 
@@ -442,7 +450,7 @@ export default function EncuestaIaPage() {
                 ) : (
                     <div>
                         <h2 className="text-2xl font-bold mb-4">Casi hemos terminado...</h2>
-                        <p className="mb-6">Introduce tu email para generar y recibir tu informe personalizado.</p>
+                        <p className="mb-6">Para generar tu informe personalizado, necesitamos tu consentimiento.</p>
                         <div className="space-y-4 text-left">
                             <div>
                                 <Label htmlFor="userEmail">Tu dirección de email</Label>
@@ -458,8 +466,30 @@ export default function EncuestaIaPage() {
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(Boolean(checked))} disabled={isLoading} />
                                 <Label htmlFor="consent" className="text-sm font-normal">
-                                    Acepto que me contactéis respecto a este diagnóstico.
+                                    Acepto los términos de uso y la política de privacidad para recibir el informe.
                                 </Label>
+                            </div>
+
+                            <div className="border-t pt-4 space-y-4">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="phoneConsent" checked={phoneConsent} onCheckedChange={(checked) => setPhoneConsent(Boolean(checked))} disabled={isLoading} />
+                                    <Label htmlFor="phoneConsent" className="text-sm font-normal">
+                                        (Opcional) Acepto que me contactéis por teléfono.
+                                    </Label>
+                                </div>
+                                {phoneConsent && (
+                                     <div>
+                                        <Label htmlFor="userPhone" className="sr-only">Número de teléfono</Label>
+                                        <Input
+                                            id="userPhone"
+                                            type="tel"
+                                            placeholder="Escribe aquí tu número de teléfono"
+                                            value={formData.userPhone || ''}
+                                            onChange={(e) => setFormData({...formData, userPhone: e.target.value})}
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end">

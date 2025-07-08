@@ -26,6 +26,7 @@ export interface FormData {
   userName: string;
   userRole: string;
   userEmail: string;
+  userPhone?: string;
   companyName: string;
   sector: string;
   tools: string;
