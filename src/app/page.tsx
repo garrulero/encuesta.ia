@@ -211,7 +211,7 @@ export default function EncuestaIaPage() {
             id: `q-ai-${questions.length + 1}`,
             text: result.question,
             phase: result.phase,
-            type: result.type,
+            type: result.type || 'text',
             options: result.options,
             key: `custom-${result.phase}-${questions.length + 1}`
         }

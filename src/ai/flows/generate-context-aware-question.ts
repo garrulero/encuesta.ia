@@ -27,7 +27,7 @@ const GenerateContextAwareQuestionOutputSchema = z.object({
   question: z.string().describe('The generated context-aware question. Can be an empty string if phase is "result".'),
   phase: z.enum(['basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result'])
     .describe('The phase of the generated question.'),
-  type: z.enum(['text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions', '']).describe('The type of input field to show for this question. Can be an empty string if phase is "result".'),
+  type: z.enum(['text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions']).optional().describe('The type of input field to show for this question. Omit if phase is "result".'),
   options: z.array(z.string()).optional().describe('A list of options for multiple-choice or checkbox-suggestions questions.'),
   optional: z.boolean().optional().describe('Whether the question is optional.'),
   hint: z.string().optional().describe('An example or clarification for the user.'),
@@ -73,7 +73,7 @@ Your response MUST conform to this Zod schema. Descriptions are for your guidanc
 {
   "question": "string // The question text. Empty if phase is 'result'.",
   "phase": "string // 'basic_info', 'problem_detection', etc.",
-  "type": "string // 'text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions'. Empty if phase is 'result'.",
+  "type": "string // Optional: 'text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions'. Omit this field if phase is 'result'.",
   "options": "string[] // Optional. For 'multiple-choice' or 'checkbox-suggestions'.",
   "optional": "boolean // Optional. Is this question optional?",
   "hint": "string // Optional. An example or clarification for the user.",
@@ -106,7 +106,7 @@ Your response MUST conform to this Zod schema. Descriptions are for your guidanc
 
 To end the survey, return this exact JSON object:
 \`\`\`json
-{ "question": "", "phase": "result", "type": "", "options": [] }
+{ "question": "", "phase": "result" }
 \`\`\`
 
 ## Final Instruction:
@@ -124,7 +124,7 @@ const generateContextAwareQuestionFlow = ai.defineFlow(
   async input => {
     // Hard limit to prevent infinite loops. The prompt should handle this gracefully before this limit is reached.
     if (input.conversationHistory.length >= 15) {
-      return { question: '', phase: 'result', type: '' };
+      return { question: '', phase: 'result' };
     }
     const {output} = await prompt(input);
     return output!;
