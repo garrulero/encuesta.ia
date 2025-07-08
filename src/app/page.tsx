@@ -1,5 +1,6 @@
+"use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
-import dynamic from "next/dynamic";
 import {
   Card,
   CardContent,
@@ -30,26 +31,6 @@ import type {
 import { Loader2, ArrowRight, Printer, Send, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Dynamically import the main component to avoid SSR issues
-const EncuestaIaPageClient = dynamic(() => Promise.resolve(EncuestaIaPageComponent), {
-  ssr: false,
-  loading: () => (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-accent p-4 sm:p-8">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>encuesta.ia - Diagnóstico interactivo v1.0</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 sm:p-10 min-h-[350px] flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Cargando...</p>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
-  )
-});
-
 const initialQuestions: Question[] = [
   {
     id: "q1",
@@ -74,7 +55,7 @@ const initialQuestions: Question[] = [
   },
 ];
 
-function EncuestaIaPageComponent() {
+export default function EncuestaIaPage() {
   const { toast } = useToast();
   const [phase, setPhase] = useState<"welcome" | "survey" | "report">("welcome");
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
@@ -490,8 +471,4 @@ function EncuestaIaPageComponent() {
       </footer>
     </main>
   );
-}
-
-export default function EncuestaIaPage() {
-  return <EncuestaIaPageClient />;
 }
