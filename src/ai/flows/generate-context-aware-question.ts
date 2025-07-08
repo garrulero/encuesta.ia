@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -84,12 +83,13 @@ This is the most important set of rules. Follow it precisely.
 
 - **If PHASE is \`time_calculation\`:**
   - This phase has two steps for EACH task: FREQUENCY, then DURATION.
-  - **For FREQUENCY questions:**
-    - The question type **MUST** be \`multiple-choice\`.
-    - You **MUST** provide this exact array in the \`options\` field: \`["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"]\`. This is not optional.
-  - **For DURATION questions:**
-    - The question type **MUST** be \`number\`.
-    - The question text **MUST** specify the unit (e.g., "en horas" o "en minutos").
+  - **For FREQUENCY questions (e.g., asking "con qué frecuencia"):**
+    - The \`type\` in your JSON output **MUST** be \`multiple-choice\`.
+    - The \`options\` field in your JSON output **MUST** be this exact array: \`["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"]\`.
+    - **This rule is absolute. If your question is about frequency, you MUST provide these options.**
+  - **For DURATION questions (e.g., asking "cuánto tiempo"):**
+    - The \`type\` in your JSON output **MUST** be \`number\`.
+    - The \`question\` text **MUST** specify the unit (e.g., "en horas" o "en minutos").
 
 - **For all other phases:** Use \`text\` or \`textarea\` as appropriate.
 
