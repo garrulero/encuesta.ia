@@ -279,6 +279,27 @@ export default function EncuestaIaPage() {
         };
         const result = await getAIReport(reportInput);
         setReport(result.report);
+
+        try {
+          const webhookData = {
+              formData,
+              conversationHistory,
+              report: result.report,
+          };
+          const response = await fetch('https://goilab.app.n8n.cloud/webhook-test/encuesta-ia', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(webhookData),
+          });
+
+          if (!response.ok) {
+              console.error("Error sending data to webhook:", response.statusText);
+          }
+        } catch (webhookError) {
+            console.error("Failed to send data to webhook:", webhookError);
+        }
     } catch (error) {
         console.error("Error generating report:", error);
         toast({ title: "Error al generar el informe", description: "No se pudo generar el informe. Inténtalo más tarde.", variant: "destructive"});
