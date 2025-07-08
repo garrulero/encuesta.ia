@@ -53,8 +53,8 @@ Your entire output MUST be a single, valid JSON object. Do not include any other
 You must guide the user through these phases in order: \`basic_info\` -> \`problem_detection\` -> \`time_calculation\` -> \`context_data\` -> \`result\`.
 
 **Phase Transition Rules (MANDATORY):**
-- **To \`problem_detection\`**: ONLY after you have collected: user's name, user's role, company name, and company sector.
-- **To \`time_calculation\`**: ONLY after the user has identified at least ONE inefficient task.
+- **To \`problem_detection\`**: ONLY after you have collected: user's name, user's role, company name, and company sector. The \`currentPhase\` will be 'basic_info' and the conversation history will contain answers to these 4 questions. Your job is to generate the first question for the 'problem_detection' phase.
+- **To \`time_calculation\`**: ONLY after the user has identified at least ONE inefficient task in the 'problem_detection' phase.
 - **To \`context_data\`**: ONLY after you have collected BOTH frequency AND duration for ALL identified inefficient tasks.
 - **To \`result\`**: After \`context_data\` is complete, or if the conversation history exceeds 10-12 questions.
 
@@ -110,7 +110,7 @@ To end the survey, return this exact JSON object:
 \`\`\`
 
 ## Final Instruction:
-All text in the \`question\` and \`hint\` fields must be in **Spanish (castellano)**.
+All text in the \`question\`, \`hint\`, and \`options\` fields must be in **Spanish (castellano)**.
 `,
   model: 'googleai/gemini-2.5-flash',
 });

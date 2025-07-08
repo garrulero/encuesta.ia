@@ -12,6 +12,8 @@ export interface Question {
   type: "text" | "number" | "textarea" | "multiple-choice" | "checkbox-suggestions";
   key: keyof FormData | `custom-${string}`;
   options?: string[];
+  optional?: boolean;
+  hint?: string;
 }
 
 export type ConversationEntry = {

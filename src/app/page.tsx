@@ -53,6 +53,13 @@ const initialQuestions: Question[] = [
     type: "text",
     key: "companyName",
   },
+  {
+    id: "q4",
+    phase: "basic_info",
+    text: "¿Y el sector de tu empresa? (Ej: hostelería, software, consultoría...)",
+    type: "text",
+    key: "sector",
+  },
 ];
 
 export default function EncuestaIaPage() {
@@ -92,8 +99,11 @@ export default function EncuestaIaPage() {
         setConversationHistory(conversationHistory || []);
         if (report) setReport(report);
       }
-    } catch (error) {
+    } catch (error)
+    {
       console.error("Failed to load state from localStorage", error);
+      // If state is corrupted, reset it
+      handleReset();
     }
   }, []);
 
@@ -157,7 +167,7 @@ export default function EncuestaIaPage() {
         finalAnswer = currentAnswer.trim();
     }
     
-    if (!finalAnswer) {
+    if (!finalAnswer && !currentQuestion.optional) {
       toast({
         title: "Respuesta requerida",
         description: "Por favor, selecciona una opción o escribe una respuesta.",
@@ -204,7 +214,7 @@ export default function EncuestaIaPage() {
         sector: currentData.sector,
       });
 
-      if (result.phase === 'result' || !result.question || history.length >= 9) {
+      if (result.phase === 'result' || !result.question || history.length >= 12) {
         setPhase('report');
       } else {
         const newQuestion: Question = {
@@ -213,6 +223,8 @@ export default function EncuestaIaPage() {
             phase: result.phase,
             type: result.type || 'text',
             options: result.options,
+            optional: result.optional,
+            hint: result.hint,
             key: `custom-${result.phase}-${questions.length + 1}`
         }
         setQuestions([...questions, newQuestion]);
@@ -298,19 +310,22 @@ export default function EncuestaIaPage() {
       );
     }
 
-    if (phase === "survey") {
+    if (phase === "survey" && currentQuestionIndex < questions.length) {
       const q = questions[currentQuestionIndex];
       const isNextDisabled = isLoading || (
-        q.type === 'checkbox-suggestions' 
-            ? selectedOptions.length === 0 && !currentAnswer.trim()
-            : !currentAnswer.trim()
+        !q.optional && (
+            q.type === 'checkbox-suggestions' 
+                ? selectedOptions.length === 0 && !currentAnswer.trim()
+                : !currentAnswer.trim()
+        )
       );
 
       return (
         <div key={q.id} className={`w-full ${animationClass}`}>
           <Label htmlFor={q.id} className="block text-xl mb-6 text-left">
-            {q.text}
+            {q.text} {q.optional && <span className="text-sm text-muted-foreground">(opcional)</span>}
           </Label>
+          {q.hint && <p className="text-sm text-muted-foreground mb-4">{q.hint}</p>}
           
           {q.type === 'textarea' ? (
             <Textarea
@@ -368,7 +383,7 @@ export default function EncuestaIaPage() {
                 id={`${q.id}-custom`}
                 value={currentAnswer}
                 onChange={(e) => setCurrentAnswer(e.target.value)}
-                placeholder="Añade aquí otras tareas..."
+                placeholder="Añade aquí otras tareas (una por línea)..."
                 className="min-h-[100px]"
                 disabled={isLoading}
               />
@@ -450,6 +465,9 @@ export default function EncuestaIaPage() {
             </div>
         );
     }
+
+    // Fallback for loading state or if something goes wrong
+    return null;
   };
 
   return (
