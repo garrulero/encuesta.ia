@@ -286,7 +286,7 @@ export default function EncuestaIaPage() {
               conversationHistory,
               report: result.report,
           };
-          const response = await fetch('https://goilab.app.n8n.cloud/webhook-test/encuesta-ia', {
+          const response = await fetch('https://n8n.garrulero.xyz/webhook/encuesta-ia', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
