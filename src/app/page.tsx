@@ -232,18 +232,20 @@ export default function EncuestaIaPage() {
         setAnimationClass("animate-slide-in");
       } else {
         
-        // Client-side guardrail to prevent AI mistakes
-        if (result.question.toLowerCase().includes('con qué frecuencia') || result.type === 'FREQUENCY_QUESTION') {
-            result.type = 'multiple-choice';
-            result.options = ["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"];
+        let finalQuestionType = result.type || 'text';
+        let finalOptions = result.options;
+
+        if (result.type === 'FREQUENCY_QUESTION') {
+            finalQuestionType = 'multiple-choice';
+            finalOptions = ["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"];
         }
 
         const newQuestion: Question = {
             id: `q-ai-${history.length + 1}`,
             text: result.question,
             phase: result.phase,
-            type: result.type || 'text',
-            options: result.options,
+            type: finalQuestionType,
+            options: finalOptions,
             optional: result.optional,
             hint: result.hint,
             key: `custom-${result.phase}-${history.length + 1}`
