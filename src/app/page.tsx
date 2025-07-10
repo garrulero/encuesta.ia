@@ -229,6 +229,7 @@ export default function EncuestaIaPage() {
 
       if (result.phase === 'result' || !result.question || history.length >= 12) {
         setPhase('report');
+        setAnimationClass("animate-slide-in");
       } else {
         const newQuestion: Question = {
             id: `q-ai-${history.length + 1}`,
@@ -282,9 +283,20 @@ export default function EncuestaIaPage() {
 
         try {
           const webhookData = {
-              formData,
-              conversationHistory,
+            contactInfo: {
+              userName: formData.userName || 'N/A',
+              userRole: formData.userRole || 'N/A',
+              userEmail: formData.userEmail || 'N/A',
+              userPhone: formData.userPhone || '',
+            },
+            companyInfo: {
+              companyName: formData.companyName || 'N/A',
+              sector: formData.sector || 'N/A',
+            },
+            surveyData: {
+              conversationHistory: conversationHistory,
               report: result.report,
+            }
           };
           const response = await fetch('https://n8n.garrulero.xyz/webhook/encuesta-ia', {
               method: 'POST',
