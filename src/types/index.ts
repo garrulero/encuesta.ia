@@ -9,7 +9,7 @@ export interface Question {
   id: string;
   phase: Phase;
   text: string;
-  type: "text" | "number" | "textarea" | "multiple-choice" | "checkbox-suggestions";
+  type: "text" | "number" | "textarea" | "multiple-choice" | "checkbox-suggestions" | "FREQUENCY_QUESTION";
   key: keyof FormData | `custom-${string}`;
   options?: string[];
   optional?: boolean;

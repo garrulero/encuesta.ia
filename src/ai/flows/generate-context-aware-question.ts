@@ -26,7 +26,7 @@ const GenerateContextAwareQuestionOutputSchema = z.object({
   question: z.string().describe('The generated context-aware question. Can be an empty string if phase is "result".'),
   phase: z.enum(['basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result'])
     .describe('The phase of the generated question.'),
-  type: z.enum(['text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions']).optional().describe('The type of input field to show for this question. Omit if phase is "result".'),
+  type: z.enum(['text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions', 'FREQUENCY_QUESTION']).optional().describe('The type of input field to show for this question. Omit if phase is "result".'),
   options: z.array(z.string()).optional().describe('A list of options for multiple-choice or checkbox-suggestions questions.'),
   optional: z.boolean().optional().describe('Whether the question is optional.'),
   hint: z.string().optional().describe('An example or clarification for the user.'),
@@ -84,9 +84,8 @@ This is the most important set of rules. Follow it precisely.
 - **If PHASE is \`time_calculation\`:**
   - This phase has two steps for EACH task: FREQUENCY, then DURATION.
   - **For FREQUENCY questions (e.g., asking "con qué frecuencia"):**
-    - The \`type\` in your JSON output **MUST** be \`multiple-choice\`.
-    - The \`options\` field in your JSON output **MUST** be this exact array: \`["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"]\`.
-    - **This rule is absolute. If your question is about frequency, you MUST provide these options.**
+    - The \`type\` in your JSON output **MUST** be \`FREQUENCY_QUESTION\`.
+    - **This rule is absolute. If your question is about frequency, you MUST use this type.**
   - **For DURATION questions (e.g., asking "cuánto tiempo"):**
     - The \`type\` in your JSON output **MUST** be \`number\`.
     - The \`question\` text **MUST** specify the unit (e.g., "en horas" o "en minutos").
@@ -117,7 +116,7 @@ To end the survey, return this exact JSON object:
 {
   "question": "string",
   "phase": "enum('basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result')",
-  "type": "enum('text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions').optional()",
+  "type": "enum('text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions', 'FREQUENCY_QUESTION').optional()",
   "options": "string[].optional()",
   "optional": "boolean.optional()",
   "hint": "string.optional()",
