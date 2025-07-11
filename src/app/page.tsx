@@ -232,20 +232,12 @@ export default function EncuestaIaPage() {
         setAnimationClass("animate-slide-in");
       } else {
         
-        let finalQuestionType = result.type || 'text';
-        let finalOptions = result.options;
-
-        if (result.type === 'FREQUENCY_QUESTION') {
-            finalQuestionType = 'multiple-choice';
-            finalOptions = ["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"];
-        }
-
         const newQuestion: Question = {
             id: `q-ai-${history.length + 1}`,
             text: result.question,
             phase: result.phase,
-            type: finalQuestionType,
-            options: finalOptions,
+            type: result.type || 'text',
+            options: result.options,
             optional: result.optional,
             hint: result.hint,
             key: `custom-${result.phase}-${history.length + 1}`
@@ -268,6 +260,45 @@ export default function EncuestaIaPage() {
     }
   };
 
+  const sendWebhookData = async (currentReport: string) => {
+    try {
+      const webhookData = {
+        contactInfo: {
+          userName: formData.userName || 'N/A',
+          userRole: formData.userRole || 'N/A',
+          userEmail: formData.userEmail || 'N/A',
+          userPhone: formData.userPhone || '',
+        },
+        companyInfo: {
+          companyName: formData.companyName || 'N/A',
+          sector: formData.sector || 'N/A',
+        },
+        surveyData: {
+          conversationHistory: conversationHistory,
+          report: currentReport,
+        }
+      };
+      const response = await fetch('https://n8n.garrulero.xyz/webhook/encuesta-ia', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookData),
+      });
+
+      if (!response.ok) {
+          console.error("Error sending data to webhook:", response.statusText);
+          toast({ title: "Error de Webhook", description: `No se pudo enviar los datos (HTTP ${response.status}).`, variant: "destructive" });
+          return false;
+      }
+      return true;
+    } catch (webhookError) {
+        console.error("Failed to send data to webhook:", webhookError);
+        toast({ title: "Error de Webhook", description: "Fallo al conectar con el servidor del webhook.", variant: "destructive" });
+        return false;
+    }
+  }
+
   const handleGenerateReport = async () => {
     if (!formData.userEmail) {
         toast({ title: "Email requerido", description: "Por favor, introduce tu email para recibir el informe.", variant: "destructive"});
@@ -289,38 +320,8 @@ export default function EncuestaIaPage() {
         };
         const result = await getAIReport(reportInput);
         setReport(result.report);
+        await sendWebhookData(result.report);
 
-        try {
-          const webhookData = {
-            contactInfo: {
-              userName: formData.userName || 'N/A',
-              userRole: formData.userRole || 'N/A',
-              userEmail: formData.userEmail || 'N/A',
-              userPhone: formData.userPhone || '',
-            },
-            companyInfo: {
-              companyName: formData.companyName || 'N/A',
-              sector: formData.sector || 'N/A',
-            },
-            surveyData: {
-              conversationHistory: conversationHistory,
-              report: result.report,
-            }
-          };
-          const response = await fetch('https://n8n.garrulero.xyz/webhook/encuesta-ia', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(webhookData),
-          });
-
-          if (!response.ok) {
-              console.error("Error sending data to webhook:", response.statusText);
-          }
-        } catch (webhookError) {
-            console.error("Failed to send data to webhook:", webhookError);
-        }
     } catch (error) {
         console.error("Error generating report:", error);
         toast({ title: "Error al generar el informe", description: "No se pudo generar el informe. Inténtalo más tarde.", variant: "destructive"});
@@ -328,6 +329,19 @@ export default function EncuestaIaPage() {
         setIsLoading(false);
     }
   };
+
+  const handleResendWebhook = async () => {
+    setLoadingMessage("Reenviando datos al webhook...");
+    setIsLoading(true);
+    const success = await sendWebhookData(report);
+    if (success) {
+      toast({
+        title: "Datos reenviados",
+        description: "El diagnóstico se ha enviado al webhook correctamente.",
+      });
+    }
+    setIsLoading(false);
+  }
   
   const handleDownloadData = () => {
     const dataToSave = {
@@ -478,7 +492,7 @@ export default function EncuestaIaPage() {
                         <div className="text-left whitespace-pre-wrap p-4 border-2 border-dashed border-black bg-white max-h-96 overflow-y-auto">
                             {report}
                         </div>
-                        <div className="mt-8 flex justify-center gap-4">
+                        <div className="mt-8 flex flex-wrap justify-center gap-4">
                             <Button onClick={handleDownloadData} size="lg" variant="outline">
                                 <Download className="mr-2 h-4 w-4" />
                                 Descargar datos
@@ -486,6 +500,10 @@ export default function EncuestaIaPage() {
                             <Button onClick={() => window.print()} size="lg">
                                 <Printer className="mr-2 h-4 w-4" />
                                 Imprimir informe
+                            </Button>
+                             <Button onClick={handleResendWebhook} size="lg" variant="secondary">
+                                <Send className="mr-2 h-4 w-4" />
+                                Reenviar a Webhook
                             </Button>
                         </div>
                     </div>
