@@ -78,6 +78,7 @@ export default function EncuestaIaPage() {
   const [animationClass, setAnimationClass] = useState("animate-slide-in");
 
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -110,6 +111,7 @@ export default function EncuestaIaPage() {
         handleReset();
       }
     }
+    isInitialLoad.current = false;
   }, []);
 
   useEffect(() => {
@@ -137,6 +139,22 @@ export default function EncuestaIaPage() {
         inputRef.current.focus();
     }
   }, [currentQuestionIndex, phase]);
+  
+   useEffect(() => {
+    // This effect runs when conversationHistory is updated.
+    // We check if the last interaction was the end of the initial questions.
+    if (isInitialLoad.current) return;
+    
+    const lastQuestion = questions[currentQuestionIndex];
+    const isEndOfInitialQuestions =
+      lastQuestion?.phase === 'basic_info' &&
+      currentQuestionIndex === initialQuestions.length - 1;
+
+    if (isEndOfInitialQuestions) {
+        fetchNextQuestion(conversationHistory, formData);
+    }
+  }, [conversationHistory]);
+
 
   const handleReset = useCallback(() => {
     setPhase("welcome");
@@ -194,16 +212,21 @@ export default function EncuestaIaPage() {
     setFormData(newFormData);
 
     const newHistoryEntry = { question: currentQuestion.text, answer: finalAnswer };
-    const newHistory = [...conversationHistory, newHistoryEntry];
-    setConversationHistory(newHistory);
+    setConversationHistory(prevHistory => [...prevHistory, newHistoryEntry]);
     
     setCurrentAnswer("");
     setSelectedOptions([]);
 
     if (currentQuestionIndex < questions.length - 1) {
       triggerAnimation(currentQuestionIndex + 1);
-    } else {
-      await fetchNextQuestion(newHistory, newFormData);
+    } else if (currentQuestionIndex >= initialQuestions.length - 1) {
+      // The useEffect will handle fetching the next question from the AI
+      // if it's the end of the initial batch. For subsequent AI questions,
+      // we need to call it directly.
+      const currentPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
+      if (currentPhase !== 'basic_info') {
+        fetchNextQuestion( [...conversationHistory, newHistoryEntry], newFormData);
+      }
     }
   };
   
@@ -640,3 +663,5 @@ export default function EncuestaIaPage() {
     </main>
   );
 }
+
+    
