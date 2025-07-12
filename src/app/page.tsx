@@ -26,6 +26,7 @@ import type {
   Conversation,
   FormData,
   Question,
+  Phase,
 } from "@/types";
 import { Loader2, ArrowRight, Printer, Send, RefreshCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -63,7 +64,7 @@ const initialQuestions: Question[] = [
 
 export default function EncuestaIaPage() {
   const { toast } = useToast();
-  const [phase, setPhase] = useState<"welcome" | "survey" | "report">("welcome");
+  const [currentAppPhase, setCurrentAppPhase] = useState<"welcome" | "survey" | "report">("welcome");
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [formData, setFormData] = useState<Partial<FormData>>({});
@@ -85,7 +86,7 @@ export default function EncuestaIaPage() {
         const savedState = localStorage.getItem("encuesta-ia-state");
         if (savedState) {
           const {
-            phase,
+            currentAppPhase: savedPhase,
             questions,
             currentQuestionIndex,
             formData,
@@ -95,7 +96,7 @@ export default function EncuestaIaPage() {
             phoneConsent,
           } = JSON.parse(savedState);
           
-          setPhase(phase || "welcome");
+          setCurrentAppPhase(savedPhase || "welcome");
           if (questions && questions.length > 0) setQuestions(questions);
           setCurrentQuestionIndex(currentQuestionIndex || 0);
           setFormData(formData || {});
@@ -116,7 +117,7 @@ export default function EncuestaIaPage() {
     if (typeof window !== 'undefined') {
       try {
         const stateToSave = JSON.stringify({
-          phase,
+          currentAppPhase,
           questions,
           currentQuestionIndex,
           formData,
@@ -130,16 +131,16 @@ export default function EncuestaIaPage() {
         console.error("Failed to save state to localStorage", error);
       }
     }
-  }, [phase, questions, currentQuestionIndex, formData, conversationHistory, report, consent, phoneConsent]);
+  }, [currentAppPhase, questions, currentQuestionIndex, formData, conversationHistory, report, consent, phoneConsent]);
   
   useEffect(() => {
-    if (phase === 'survey' && inputRef.current) {
+    if (currentAppPhase === 'survey' && inputRef.current) {
         inputRef.current.focus();
     }
-  }, [currentQuestionIndex, phase]);
+  }, [currentQuestionIndex, currentAppPhase]);
 
   const handleReset = useCallback(() => {
-    setPhase("welcome");
+    setCurrentAppPhase("welcome");
     setQuestions(initialQuestions);
     setCurrentQuestionIndex(0);
     setFormData({});
@@ -202,12 +203,15 @@ export default function EncuestaIaPage() {
     
     const isEndOfInitialQuestions = currentQuestion.phase === 'basic_info' && currentQuestionIndex === initialQuestions.length - 1;
 
-    if (isEndOfInitialQuestions || (questions.length > initialQuestions.length && currentQuestionIndex >= questions.length - 1)) {
+    if (isEndOfInitialQuestions) {
+        fetchNextQuestion(updatedHistory, newFormData, 'task_identification');
+    } else if (currentQuestionIndex >= questions.length - 1) {
         if (finalAnswer === "Preparar el informe") {
-          setPhase("report");
+          setCurrentAppPhase("report");
           return;
         }
-        fetchNextQuestion(updatedHistory, newFormData);
+        const nextPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
+        fetchNextQuestion(updatedHistory, newFormData, nextPhase);
     } else {
         triggerAnimation(currentQuestionIndex + 1);
     }
@@ -221,14 +225,13 @@ export default function EncuestaIaPage() {
     }, 500);
   }
 
-  const fetchNextQuestion = async (history: Conversation, currentData: Partial<FormData>) => {
+  const fetchNextQuestion = async (history: Conversation, currentData: Partial<FormData>, phase: Phase) => {
     setIsLoading(true);
     setLoadingMessage("La IA está pensando la siguiente pregunta...");
     try {
-      const currentPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
       const result = await getAIQuestion({
         conversationHistory: history,
-        currentPhase: currentPhase,
+        currentPhase: phase,
         sector: currentData.sector,
       });
 
@@ -249,20 +252,6 @@ export default function EncuestaIaPage() {
 
       const firstNewQuestion = newQuestionsFromAI[0];
       
-      // SAFETY CHECK: Prevent moving to report phase prematurely.
-      if ((firstNewQuestion.phase === 'result' || !firstNewQuestion.question) && history.length < 20) {
-        console.error("AI tried to end conversation prematurely. History:", history);
-        toast({
-          title: "Error de la IA",
-          description: "La IA ha intentado terminar la conversación antes de tiempo. Por favor, inténtalo de nuevo.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        // Optionally, reset or try again
-        // handleReset(); // Let's not reset automatically, it's too disruptive.
-        return;
-      }
-      
       if (firstNewQuestion.phase === 'reflection') {
         setLoadingMessage(firstNewQuestion.text);
         
@@ -275,7 +264,7 @@ export default function EncuestaIaPage() {
         }, 3000); 
 
       } else if (firstNewQuestion.phase === 'result') {
-          setPhase('report');
+          setCurrentAppPhase('report');
           setIsLoading(false);
       } else {
         setQuestions(prevQuestions => {
@@ -414,7 +403,7 @@ export default function EncuestaIaPage() {
   };
 
   const renderContent = () => {
-    if (phase === "welcome") {
+    if (currentAppPhase === "welcome") {
       return (
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Bienvenido a encuesta.ia</h2>
@@ -422,7 +411,7 @@ export default function EncuestaIaPage() {
             Vamos a descubrir juntos algunas tareas de tu día a día que se podrían mejorar.
             Será una conversación breve y sin tecnicismos.
           </p>
-          <Button onClick={() => setPhase("survey")} size="lg">
+          <Button onClick={() => setCurrentAppPhase("survey")} size="lg">
             Empezar Diagnóstico
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -430,7 +419,7 @@ export default function EncuestaIaPage() {
       );
     }
 
-    if (phase === "survey" && currentQuestionIndex < questions.length) {
+    if (currentAppPhase === "survey" && currentQuestionIndex < questions.length) {
       const q = questions[currentQuestionIndex];
       const isNextDisabled = isLoading || (
         !q.optional && (
@@ -547,7 +536,7 @@ export default function EncuestaIaPage() {
       );
     }
     
-    if (phase === "report") {
+    if (currentAppPhase === "report") {
         return (
             <div className={`w-full ${animationClass}`}>
                 {report ? (
@@ -655,7 +644,7 @@ export default function EncuestaIaPage() {
         <CardContent className="p-6 sm:p-10 min-h-[350px] flex items-center justify-center">
           {renderContent()}
         </CardContent>
-        {phase !== 'welcome' && (
+        {currentAppPhase !== 'welcome' && (
           <CardFooter className="justify-center border-t p-6">
               <Button variant="link" onClick={handleReset}>
                   <RefreshCcw className="mr-2 h-4 w-4" />
@@ -670,3 +659,5 @@ export default function EncuestaIaPage() {
     </main>
   );
 }
+
+    
