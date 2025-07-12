@@ -216,8 +216,8 @@ export default function EncuestaIaPage() {
   }
 
   const fetchNextQuestion = async (history: Conversation, currentData: Partial<FormData>) => {
-    setLoadingMessage("La IA está pensando la siguiente pregunta...");
     setIsLoading(true);
+    setLoadingMessage("La IA está pensando la siguiente pregunta...");
     try {
       const currentPhase = questions[currentQuestionIndex]?.phase ?? 'basic_info';
       const result = await getAIQuestion({
@@ -225,28 +225,48 @@ export default function EncuestaIaPage() {
         currentPhase: currentPhase,
         sector: currentData.sector,
       });
+
+      const newQuestionsFromAI: Question[] = result.responses.map((response, index) => ({
+        id: `q-ai-${history.length + 1 + index}`,
+        text: response.question,
+        phase: response.phase,
+        type: response.type || 'text',
+        options: response.options,
+        optional: response.optional,
+        hint: response.hint,
+        key: `custom-${response.phase}-${history.length + 1 + index}`
+      }));
+
+      const firstNewQuestion = newQuestionsFromAI[0];
       
-      if (result.phase === 'result' || !result.question || history.length >= 20) {
+      if (firstNewQuestion.phase === 'result' || !firstNewQuestion.question || history.length >= 20) {
         setPhase('report');
         setAnimationClass("animate-slide-in");
-      } else {
-        
-        const newQuestion: Question = {
-            id: `q-ai-${history.length + 1}`,
-            text: result.question,
-            phase: result.phase,
-            type: result.type || 'text',
-            options: result.options,
-            optional: result.optional,
-            hint: result.hint,
-            key: `custom-${result.phase}-${history.length + 1}`
-        }
-        setQuestions(prevQuestions => {
-          const newQuestions = [...prevQuestions, newQuestion];
-          triggerAnimation(newQuestions.length - 1);
-          return newQuestions;
-        });
+        setIsLoading(false);
+        return;
       }
+      
+      if (firstNewQuestion.phase === 'reflection') {
+        setLoadingMessage(firstNewQuestion.text);
+        
+        // Add only the second question (the actionable one) to the state
+        const actionableQuestion = newQuestionsFromAI[1];
+        setQuestions(prevQuestions => [...prevQuestions, actionableQuestion]);
+        
+        setTimeout(() => {
+          setIsLoading(false);
+          triggerAnimation(questions.length); // Animate to the new question
+        }, 3000); // Wait 3 seconds showing the reflection
+
+      } else {
+        setQuestions(prevQuestions => {
+          const allNewQuestions = [...prevQuestions, ...newQuestionsFromAI];
+          triggerAnimation(allNewQuestions.length - newQuestionsFromAI.length);
+          return allNewQuestions;
+        });
+        setIsLoading(false);
+      }
+
     } catch (error) {
       console.error("Error fetching next question:", error);
       toast({
@@ -254,10 +274,10 @@ export default function EncuestaIaPage() {
         description: "No se pudo obtener la siguiente pregunta. Inténtalo de nuevo.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
+
 
   const sendWebhookData = async (currentReport: string) => {
     try {
