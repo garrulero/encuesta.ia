@@ -261,7 +261,7 @@ export default function EncuestaIaPage() {
             setQuestions(prevQuestions => [...prevQuestions, actionableQuestion]);
             setIsLoading(false);
             triggerAnimation(questions.length); 
-        }, 3000); 
+        }, 5000); 
 
       } else if (firstNewQuestion.phase === 'result') {
           setCurrentAppPhase('report');
@@ -659,5 +659,3 @@ export default function EncuestaIaPage() {
     </main>
   );
 }
-
-    
