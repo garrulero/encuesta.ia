@@ -199,10 +199,14 @@ export default function EncuestaIaPage() {
     
     setCurrentAnswer("");
     setSelectedOptions([]);
-
+    
     const isEndOfInitialQuestions = currentQuestion.phase === 'basic_info' && currentQuestionIndex === initialQuestions.length - 1;
 
-    if (isEndOfInitialQuestions || currentQuestionIndex >= questions.length - 1) {
+    if (isEndOfInitialQuestions || (questions.length > initialQuestions.length && currentQuestionIndex >= questions.length - 1)) {
+        if (finalAnswer === "Preparar el informe") {
+          setPhase("report");
+          return;
+        }
         fetchNextQuestion(updatedHistory, newFormData);
     } else {
         triggerAnimation(currentQuestionIndex + 1);
@@ -246,7 +250,7 @@ export default function EncuestaIaPage() {
       const firstNewQuestion = newQuestionsFromAI[0];
       
       // SAFETY CHECK: Prevent moving to report phase prematurely.
-      if ((firstNewQuestion.phase === 'result' || !firstNewQuestion.question) && history.length < 5) {
+      if ((firstNewQuestion.phase === 'result' || !firstNewQuestion.question) && history.length < 20) {
         console.error("AI tried to end conversation prematurely. History:", history);
         toast({
           title: "Error de la IA",
@@ -255,7 +259,7 @@ export default function EncuestaIaPage() {
         });
         setIsLoading(false);
         // Optionally, reset or try again
-        handleReset();
+        // handleReset(); // Let's not reset automatically, it's too disruptive.
         return;
       }
       
@@ -270,6 +274,9 @@ export default function EncuestaIaPage() {
             triggerAnimation(questions.length); 
         }, 3000); 
 
+      } else if (firstNewQuestion.phase === 'result') {
+          setPhase('report');
+          setIsLoading(false);
       } else {
         setQuestions(prevQuestions => {
           const allNewQuestions = [...prevQuestions, ...newQuestionsFromAI];
