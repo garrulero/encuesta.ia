@@ -117,6 +117,9 @@ Sigue este flujo de fases en orden: \`basic_info\` -> \`task_identification\` ->
 - **Tu Objetivo:** Finalizar la conversación.
 - **Tu Respuesta:** Devuelve un array \`responses\` con un único objeto: \`{ "question": "", "phase": "result" }\`.
 
+**REGLA DE SEGURIDAD FINAL (CRÍTICA):**
+- **NO PASES NUNCA a la fase \`result\` si el historial de conversación es corto (ej: menos de 20 entradas).** Es tu responsabilidad continuar la conversación de forma lógica. Si estás atascado, haz una pregunta abierta para desatascar la conversación, pero no la termines prematuramente.
+
 **ESQUEMA JSON DE SALIDA OBLIGATORIO:**
 Tu respuesta DEBE ser un único objeto JSON válido que se ajuste a este esquema.
 \`\`\`json

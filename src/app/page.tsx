@@ -202,12 +202,10 @@ export default function EncuestaIaPage() {
 
     const isEndOfInitialQuestions = currentQuestion.phase === 'basic_info' && currentQuestionIndex === initialQuestions.length - 1;
 
-    if (isEndOfInitialQuestions) {
+    if (isEndOfInitialQuestions || currentQuestionIndex >= questions.length - 1) {
         fetchNextQuestion(updatedHistory, newFormData);
-    } else if (currentQuestionIndex < questions.length - 1) {
-        triggerAnimation(currentQuestionIndex + 1);
     } else {
-        fetchNextQuestion(updatedHistory, newFormData);
+        triggerAnimation(currentQuestionIndex + 1);
     }
   };
   
@@ -247,10 +245,17 @@ export default function EncuestaIaPage() {
 
       const firstNewQuestion = newQuestionsFromAI[0];
       
-      if (firstNewQuestion.phase === 'result' || !firstNewQuestion.question || history.length >= 20) {
-        setPhase('report');
-        setAnimationClass("animate-slide-in");
+      // SAFETY CHECK: Prevent moving to report phase prematurely.
+      if ((firstNewQuestion.phase === 'result' || !firstNewQuestion.question) && history.length < 5) {
+        console.error("AI tried to end conversation prematurely. History:", history);
+        toast({
+          title: "Error de la IA",
+          description: "La IA ha intentado terminar la conversación antes de tiempo. Por favor, inténtalo de nuevo.",
+          variant: "destructive",
+        });
         setIsLoading(false);
+        // Optionally, reset or try again
+        handleReset();
         return;
       }
       
@@ -326,6 +331,11 @@ export default function EncuestaIaPage() {
   }
 
   const handleGenerateReport = async () => {
+    // SAFETY CHECK: Ensure there's enough conversation to generate a meaningful report.
+    if (conversationHistory.length <= 5) {
+      toast({ title: "Datos insuficientes", description: "Es necesario responder a más preguntas para poder generar un informe.", variant: "destructive"});
+      return;
+    }
     if (!formData.userEmail) {
         toast({ title: "Email requerido", description: "Por favor, introduce tu email para recibir el informe.", variant: "destructive"});
         return;
@@ -345,6 +355,11 @@ export default function EncuestaIaPage() {
             conversationHistory: conversationHistory,
         };
         const result = await getAIReport(reportInput);
+        
+        if (!result || !result.report) {
+          throw new Error("AI failed to generate a report.");
+        }
+
         setReport(result.report);
         await sendWebhookData(result.report);
 
