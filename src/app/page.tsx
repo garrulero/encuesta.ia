@@ -175,7 +175,7 @@ export default function EncuestaIaPage() {
         const customTasks = currentAnswer.trim().split('\n').filter(task => task.trim() !== '');
         const allTasks = [...new Set([...selectedOptions, ...customTasks])];
         finalAnswer = allTasks.join(', ');
-    } else if (currentQuestion.type === 'multiple-choice') {
+    } else if (currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'FREQUENCY_QUESTION') {
         finalAnswer = currentAnswer;
     } else {
         finalAnswer = currentAnswer.trim();
@@ -193,10 +193,8 @@ export default function EncuestaIaPage() {
     const newFormData = { ...formData, [currentQuestion.key]: finalAnswer };
     setFormData(newFormData);
 
-    const newHistory: Conversation = [
-      ...conversationHistory,
-      { question: currentQuestion.text, answer: finalAnswer },
-    ];
+    const newHistoryEntry = { question: currentQuestion.text, answer: finalAnswer };
+    const newHistory = [...conversationHistory, newHistoryEntry];
     setConversationHistory(newHistory);
     
     setCurrentAnswer("");
@@ -221,7 +219,7 @@ export default function EncuestaIaPage() {
     setIsLoading(true);
     setLoadingMessage("La IA está pensando la siguiente pregunta...");
     try {
-      const currentPhase = questions[currentQuestionIndex]?.phase ?? 'basic_info';
+      const currentPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
       const result = await getAIQuestion({
         conversationHistory: history,
         currentPhase: currentPhase,
@@ -251,14 +249,13 @@ export default function EncuestaIaPage() {
       if (firstNewQuestion.phase === 'reflection') {
         setLoadingMessage(firstNewQuestion.text);
         
-        // Add only the second question (the actionable one) to the state
         const actionableQuestion = newQuestionsFromAI[1];
         setQuestions(prevQuestions => [...prevQuestions, actionableQuestion]);
         
         setTimeout(() => {
           setIsLoading(false);
-          triggerAnimation(questions.length); // Animate to the new question
-        }, 3000); // Wait 3 seconds showing the reflection
+          triggerAnimation(questions.length); 
+        }, 3000); 
 
       } else {
         setQuestions(prevQuestions => {
@@ -407,7 +404,7 @@ export default function EncuestaIaPage() {
       const q = questions[currentQuestionIndex];
       const isNextDisabled = isLoading || (
         !q.optional && (
-            q.type === 'checkbox-suggestions' || q.type === 'multiple-choice'
+            q.type === 'checkbox-suggestions' || q.type === 'multiple-choice' || q.type === 'FREQUENCY_QUESTION'
                 ? selectedOptions.length === 0 && !currentAnswer.trim()
                 : !currentAnswer.trim()
         )
