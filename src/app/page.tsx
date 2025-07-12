@@ -175,6 +175,8 @@ export default function EncuestaIaPage() {
         const customTasks = currentAnswer.trim().split('\n').filter(task => task.trim() !== '');
         const allTasks = [...new Set([...selectedOptions, ...customTasks])];
         finalAnswer = allTasks.join(', ');
+    } else if (currentQuestion.type === 'multiple-choice') {
+        finalAnswer = currentAnswer;
     } else {
         finalAnswer = currentAnswer.trim();
     }
