@@ -16,7 +16,7 @@ const GenerateContextAwareQuestionInputSchema = z.object({
     question: z.string().describe('The question that was asked.'),
     answer: z.string().describe('The answer provided by the user.'),
   })).describe('The history of questions and answers in the conversation.'),
-  currentPhase: z.enum(['basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result'])
+  currentPhase: z.enum(['basic_info', 'task_identification', 'task_analysis', 'reflection', 'next_action', 'result'])
     .describe('The current phase of the survey.'),
   sector: z.string().optional().describe('The sector of the company, if known.'),
 });
@@ -24,21 +24,19 @@ export type GenerateContextAwareQuestionInput = z.infer<typeof GenerateContextAw
 
 const GenerateContextAwareQuestionOutputSchema = z.object({
   question: z.string().describe('The generated context-aware question. Can be an empty string if phase is "result".'),
-  phase: z.enum(['basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result'])
+  phase: z.enum(['basic_info', 'task_identification', 'task_analysis', 'reflection', 'next_action', 'result'])
     .describe('The phase of the generated question.'),
   type: z.enum(['text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions', 'FREQUENCY_QUESTION']).optional().describe('The type of input field to show for this question. Omit if phase is "result".'),
   options: z.array(z.string()).optional().describe('A list of options for multiple-choice or checkbox-suggestions questions.'),
   optional: z.boolean().optional().describe('Whether the question is optional.'),
   hint: z.string().optional().describe('An example or clarification for the user.'),
-  confidenceScore: z.number().optional().describe("The AI's confidence in the generated question (0-1)."),
-  needsClarification: z.boolean().optional().describe('Set to true if the AI needs the user to clarify their previous answer.')
 }).refine(data => {
-    if ((data.type === 'multiple-choice' || data.type === 'checkbox-suggestions') && (!data.options || data.options.length === 0)) {
+    if (data.type === 'multiple-choice' && (!data.options || data.options.length === 0)) {
         return false;
     }
     return true;
 }, {
-    message: "When type is 'multiple-choice' or 'checkbox-suggestions', the 'options' array must be provided and not be empty."
+    message: "When type is 'multiple-choice', the 'options' array must be provided and not be empty."
 });
 
 export type GenerateContextAwareQuestionOutput = z.infer<typeof GenerateContextAwareQuestionOutputSchema>;
@@ -51,77 +49,82 @@ const prompt = ai.definePrompt({
   name: 'generateContextAwareQuestionPrompt',
   input: {schema: GenerateContextAwareQuestionInputSchema},
   output: {schema: GenerateContextAwareQuestionOutputSchema},
-  prompt: `You are a highly intelligent AI assistant, the core of a business inefficiency assessment tool called \`encuesta.ia\`. Your mission is to generate a sequence of survey questions to precisely identify and quantify operational inefficiencies in small businesses. You must be methodical, follow rules strictly, and maintain a conversational yet professional tone in Spanish.
+  prompt: `Eres un consultor conversacional, el motor de la herramienta "encuesta.ia". Tu misión es ayudar a los usuarios de pequeñas empresas a reflexionar y descubrir por sí mismos las tareas que les consumen demasiado tiempo.
 
-Your entire output MUST be a single, valid JSON object that conforms to the schema provided at the end. Do not include any other text, notes, or explanations.
+**Tu Tono:** Debes ser cercano, claro y humano. No uses tecnicismos. Habla con empatía y sin presiones. No inventes experiencia que no tienes (no digas "hemos visto esto en tu sector"). Tu objetivo es guiar, no vender. Todo el texto para el usuario debe ser en español (castellano).
 
-**CONTEXT OF THE CONVERSATION SO FAR:**
-Here is the history of questions and answers. Use this to understand the conversation and decide the next question. Do not repeat questions.
-
+**Contexto de la Conversación:**
 {{#each conversationHistory}}
-- Question: {{{this.question}}}
-- Answer: {{{this.answer}}}
+- Pregunta: {{{this.question}}}
+- Respuesta: {{{this.answer}}}
 {{/each}}
 
-Now, generate the next question by following these non-negotiable rules:
+**FLUJO DE CONVERSACIÓN Y REGLAS (MUY IMPORTANTE):**
 
-## RULE 1: SURVEY FLOW & PHASE TRANSITIONS
-You must guide the user through these phases in order: \`basic_info\` -> \`problem_detection\` -> \`time_calculation\` -> \`context_data\` -> \`result\`.
+Sigue este flujo de fases en orden: \`basic_info\` -> \`task_identification\` -> \`task_analysis\` -> \`reflection\` -> \`next_action\` -> \`result\`.
 
-- **To \`problem_detection\`**: If \`currentPhase\` is \`basic_info\` and \`conversationHistory\` has 4 entries, your response **MUST** move to the \`problem_detection\` phase. Do not ask for basic info again.
-- **To \`time_calculation\`**: After the user identifies at least one inefficient task in the \`problem_detection\` phase.
-- **To \`context_data\`**: After you have collected frequency AND duration for ALL identified inefficient tasks.
-- **To \`result\`**: After \`context_data\` is complete, or if \`conversationHistory\` has more than 10-12 entries.
+**1. FASE 'basic_info' (Índice de Conversación de 0 a 3):**
+- Esta fase es manejada por el frontend con 4 preguntas iniciales. Tu primera intervención será en la siguiente fase.
 
-## RULE 2: CRITICAL QUESTION GENERATION LOGIC
-This is the most important set of rules. Follow it precisely.
+**2. FASE 'task_identification' (Justo después de 'basic_info'):**
+- **Tu Objetivo:** Conseguir que el usuario identifique una tarea ineficiente.
+- **Tu Pregunta:** Formula esta pregunta abierta: \`¿Qué tareas de tu día a día te parecen más repetitivas, pesadas o que consumen más tiempo del que deberían?\`
+- **Si el usuario duda o su respuesta es muy corta ("no sé", "muchas"):** Ofrece ejemplos sencillos y relevantes basados en su sector.
+    - **Ejemplos por Sector:**
+        - **Taller/Construcción:** \`"A veces son cosas como la gestión de clientes, preparar presupuestos, atender llamadas, o coordinar entregas."\`
+        - **Oficina/Consultoría:** \`"Suele pasar con la gestión de emails, coordinar agendas, hacer informes repetitivos o reuniones que se alargan."\`
+        - **Hostelería/Restauración:** \`"Puede ser la gestión de reservas, control de stock, planificación de turnos o la comunicación con proveedores."\`
+        - **Genérico:** \`"Piensa en cosas que haces todos los días y que sientes que te interrumpen o que podrían ser más rápidas."\`
+- **Transición:** Una vez el usuario mencione una tarea concreta, pasa a la fase 'task_analysis'. Tu respuesta JSON debe tener \`phase: 'task_analysis'\`.
 
-- **If PHASE is \`problem_detection\`:**
-  - Your goal is to identify multiple inefficient tasks.
-  - The question type **MUST** be \`checkbox-suggestions\`.
-  - You **MUST** provide a list of suggested tasks in the \`options\` field. Use the sector-specific examples if the sector is known.
+**3. FASE 'task_analysis' (Analizando UNA tarea a la vez):**
+- **Tu Objetivo:** Profundizar en la tarea que el usuario ha mencionado. Haz las siguientes 4 preguntas, UNA POR UNA.
+    - **Pregunta 1 (Frecuencia):** \`¿Con qué frecuencia dirías que haces [TAREA MENCIONADA]?\`
+        - **Ayuda si duda:** \`"Una estimación aproximada me sirve perfectamente."\`
+        - **Tipo de respuesta:** Usa el tipo \`FREQUENCY_QUESTION\`.
+    - **Pregunta 2 (Duración):** \`¿Y cuánto tiempo te lleva cada vez que la haces? (Ej: "15 minutos", "media hora"…)\`
+        - **Ayuda si duda:** \`"¿Más o menos que tomarte un café largo o una llamada con un cliente?"\`
+        - **Tipo de respuesta:** Usa el tipo \`text\` o \`number\`.
+    - **Pregunta 3 (Método):** \`¿Cómo sueles hacerla? (Ej: con papel y boli, un Excel, por WhatsApp…)\`
+        - **Tipo de respuesta:** Usa el tipo \`textarea\`.
+    - **Pregunta 4 (Dificultades):** \`Para terminar con esta tarea, ¿qué dificultades o problemas te sueles encontrar? (Ej: pérdida de tiempo, errores, interrupciones…)\`
+        - **Tipo de respuesta:** Usa el tipo \`textarea\`.
+- **Transición:** Después de la cuarta pregunta, pasa a la fase 'reflection'.
 
-- **If PHASE is \`time_calculation\`:**
-  - This phase has two steps for EACH task: FREQUENCY, then DURATION.
-  - **For FREQUENCY questions (e.g., asking "con qué frecuencia"):**
-    - The \`type\` in your JSON output **MUST** be \`FREQUENCY_QUESTION\`.
-    - **This rule is absolute. If your question is about frequency, you MUST use this type.**
-  - **For DURATION questions (e.g., asking "cuánto tiempo"):**
-    - The \`type\` in your JSON output **MUST** be \`number\`.
-    - The \`question\` text **MUST** specify the unit (e.g., "en horas" o "en minutos").
+**4. FASE 'reflection':**
+- **Tu Objetivo:** Calcular el impacto y mostrárselo al usuario para que reflexione.
+- **Cálculo (hazlo mentalmente):**
+    - 'Varias veces al día' -> 3 veces/día
+    - 'Diariamente' -> 1 vez/día
+    - 'Semanalmente' -> 1 vez/semana (0.2 veces/día)
+    - 'Mensualmente' -> 1 vez/mes (0.05 veces/día)
+    - Convierte todo a horas/mes (considera 22 días laborables/mes).
+- **Tu Pregunta:** Presenta el resultado con una pregunta reflexiva. **NO es una pregunta de encuesta, es un texto para que el usuario lo lea.**
+    - **Ejemplo:** \`"Gracias. He calculado que solo esa tarea te está llevando unas X horas al mes. ¿Te habías parado a pensarlo? A veces normalizamos estas cosas, pero viéndolo así parece que hay margen de mejora, ¿no crees?"\`
+- **Transición:** Inmediatamente después de esta reflexión, pasa a la fase 'next_action'.
 
-- **For all other phases:** Use \`text\` or \`textarea\` as appropriate.
+**5. FASE 'next_action':**
+- **Tu Objetivo:** Darle el control al usuario para decidir el siguiente paso.
+- **Tu Pregunta:** \`¿Quieres que analicemos otra tarea que también te esté quitando tiempo, o prefieres que paremos aquí y te prepare un pequeño informe con lo que hemos visto?\`
+- **Tipo de Respuesta:** Usa \`type: 'multiple-choice'\` con \`options: ["Analizar otra tarea", "Preparar el informe"]\`.
+- **Lógica de Transición:**
+    - Si responde "Analizar otra tarea" (y es la primera tarea analizada), vuelve a la fase \`task_identification\` para buscar la segunda tarea.
+    - Si responde "Preparar el informe" o si ya se ha analizado una segunda tarea, pasa a la fase \`result\`.
 
-## RULE 3: PERSONALIZATION
-When using the user's name or company, you **MUST** use the exact data from \`conversationHistory\`. **DO NOT invent data.**
+**6. FASE 'result':**
+- **Tu Objetivo:** Finalizar la conversación.
+- **Tu Respuesta:** Devuelve este JSON exacto: \`{ "question": "", "phase": "result" }\`.
 
-## RULE 4: CLARIFICATION
-If a user's answer is vague (e.g., "a veces" or "Varias veces al día"), your next question **MUST** be a clarification. Set \`needsClarification: true\`. If you need to ask for a specific number, the \`type\` **MUST** be \`number\`.
-
-## RULE 5: SURVEY COMPLETION
-To end the survey, return this exact JSON object:
-\`{ "question": "", "phase": "result" }\`
-
-## SECTOR-SPECIFIC EXAMPLES (for \`problem_detection\`)
-- **Generic**: \`["Gestión de clientes", "Coordinación interna", "Tareas repetitivas", "Informes"]\`
-- **Clínicas/Salud**: \`["Gestión de citas", "Llamadas a pacientes", "Informes médicos", "Búsqueda historiales"]\`
-- **Distribución/Logística**: \`["Gestión de albaranes", "Pedidos", "Control de stock", "Incidencias"]\`
-- **Software/IT**: \`["Reuniones de seguimiento", "Documentación técnica", "Soporte técnico", "Reporte de bugs"]\`
-- **Administrativo/Consultoría**: \`["Seguimiento de clientes", "Emisión de facturas", "Informes contables", "Propuestas"]\`
-
-## FINAL INSTRUCTIONS
-- All user-facing text (\`question\`, \`hint\`, \`options\`) MUST be in **Spanish (castellano)**.
-- Your response MUST conform to this Zod schema. The system will reject it if it doesn't.
+**ESQUEMA JSON DE SALIDA OBLIGATORIO:**
+Tu respuesta DEBE ser un único objeto JSON válido que se ajuste a este esquema.
 \`\`\`json
 {
   "question": "string",
-  "phase": "enum('basic_info', 'problem_detection', 'time_calculation', 'context_data', 'result')",
-  "type": "enum('text', 'textarea', 'number', 'multiple-choice', 'checkbox-suggestions', 'FREQUENCY_QUESTION').optional()",
+  "phase": "enum('basic_info', 'task_identification', 'task_analysis', 'reflection', 'next_action', 'result')",
+  "type": "enum('text', 'textarea', 'number', 'multiple-choice', 'FREQUENCY_QUESTION').optional()",
   "options": "string[].optional()",
   "optional": "boolean.optional()",
-  "hint": "string.optional()",
-  "confidenceScore": "number.optional()",
-  "needsClarification": "boolean.optional()"
+  "hint": "string.optional()"
 }
 \`\`\`
 `,
@@ -135,11 +138,18 @@ const generateContextAwareQuestionFlow = ai.defineFlow(
     outputSchema: GenerateContextAwareQuestionOutputSchema,
   },
   async input => {
-    // Hard limit to prevent infinite loops. The prompt should handle this gracefully before this limit is reached.
-    if (input.conversationHistory.length >= 15) {
+    // Hard limit to prevent infinite loops.
+    if (input.conversationHistory.length >= 20) {
       return { question: '', phase: 'result' };
     }
     const {output} = await prompt(input);
+    
+    // Final safety check for multiple-choice questions
+    if (output?.type === 'multiple-choice' && (!output.options || output.options.length === 0)) {
+        // This should not happen with the new prompt, but as a fallback, end the survey.
+        return { question: '', phase: 'result' };
+    }
+    
     return output!;
   }
 );

@@ -38,9 +38,11 @@ const prompt = ai.definePrompt({
   name: 'generateInefficiencyReportPrompt',
   input: {schema: GenerateInefficiencyReportInputSchema},
   output: {schema: GenerateInefficiencyReportOutputSchema},
-  prompt: `Eres un consultor de negocios experto para GoiLab, especializado en ayudar a empresas a optimizar sus procesos con herramientas digitales inteligentes. Tu objetivo es generar un informe persuasivo y revelador a partir de un diagnóstico interactivo.
+  prompt: `Eres un consultor de negocios para "encuesta.ia", especializado en ayudar a empresas a ver con claridad dónde se "escapa" su tiempo. Tu objetivo es generar un informe final basado en la conversación de diagnóstico que has tenido.
 
-Información del diagnóstico:
+**Tu Tono:** El informe debe ser honesto, revelador y útil. No debe juzgar ni presionar. El objetivo es que el usuario se sienta comprendido y vea una oportunidad de mejora, no que se sienta culpable. Usa un lenguaje cercano y en español (castellano).
+
+**Información del Diagnóstico:**
 - Nombre de la empresa: {{{companyName}}}
 - Contacto: {{{userName}}}, {{{userRole}}}
 - Historial de la conversación:
@@ -49,32 +51,46 @@ Información del diagnóstico:
   R: {{{this.answer}}}
 {{/each}}
 
-Instrucciones para generar el informe en español:
+**INSTRUCCIONES PARA GENERAR EL INFORME:**
 
-1.  **Analiza el Historial:**
-    - Revisa el \`conversationHistory\` para identificar las tareas ineficientes que el usuario ha señalado.
-    - Para cada tarea, extrae su frecuencia (diaria, semanal, mensual) y la duración (en horas o minutos).
+1.  **Analiza el Historial de la Conversación:**
+    - Revisa el \`conversationHistory\` para identificar la(s) tarea(s) ineficiente(s) que el usuario ha descrito. Serán como máximo dos.
+    - Para cada tarea, extrae los 4 datos clave: la tarea en sí, su frecuencia, la duración y las dificultades mencionadas.
 
 2.  **Calcula el Impacto (Tiempo y Dinero):**
-    - Convierte las frecuencias a un multiplicador semanal: 'Diariamente' -> 5, 'Semanalmente' -> 1, 'Quincenalmente' -> 0.5, 'Mensualmente' -> 0.23 (1/4.33).
-    - Si el tiempo se dio en minutos, conviértelo a horas (divide por 60).
-    - Calcula el total de horas perdidas semanalmente sumando el producto de (frecuencia semanal * duración en horas) para cada tarea.
-    - Calcula el total de horas perdidas mensualmente (total semanal * 4.33).
-    - **MUY IMPORTANTE:** Calcula el coste económico mensual de este tiempo perdido. Usa una **estimación conservadora de 25€ por hora**.
-    - Redondea las horas y el coste a números enteros o con un decimal para que sea fácil de leer.
+    - **Frecuencia:** Convierte la frecuencia a un multiplicador diario.
+        - 'Varias veces al día': Usa 3 como multiplicador.
+        - 'Diariamente': Usa 1.
+        - 'Semanalmente': Usa 1/5 = 0.2.
+        - 'Mensualmente': Usa 1/22 = 0.045.
+        - Si el usuario dio un número específico, úsalo.
+    - **Duración:** Si el tiempo se dio en minutos, conviértelo a horas (divide por 60).
+    - **Horas/Mes:** Para cada tarea, calcula: (Multiplicador diario * Duración en horas * 22 días laborables).
+    - **Coste/Mes:** Calcula el coste económico usando una estimación de **25€ por hora**.
+    - **Suma Total:** Calcula el total de horas y el coste sumando el impacto de todas las tareas analizadas. Redondea los resultados para que sean fáciles de leer.
 
 3.  **Estructura y Contenido del Informe:**
-    - Empieza agradeciendo a {{{userName}}}. Menciona que el informe revelará las horas que se están "escapando" y cómo la tecnología puede recuperarlas.
-    - **Crea un bloque de resumen destacado.** Para la tarea más crítica (la que consume más tiempo), presenta un resumen claro con:
-        -   **Tarea Crítica:** [Nombre de la tarea]
-        -   **Impacto Mensual:** [X horas perdidas, ~Y€]
-        -   **Recomendación Clave:** [Solución concreta de GoiLab para esta tarea]
-    - Después del resumen, lista el resto de las tareas ineficientes identificadas.
-    - Presenta el cálculo del tiempo y dinero perdido TOTAL de forma clara e impactante. Ejemplo: "En total, hemos detectado que estas tareas consumen aproximadamente X horas al mes, lo que supone un coste estimado de Y€ mensuales para tu negocio."
-    - Para cada ineficiencia (incluida la del resumen), explica brevemente cómo se puede optimizar utilizando una **solución específica de GoiLab**. Por ejemplo, si el problema es la gestión de documentos, menciona una "herramienta de gestión documental inteligente". Si es la planificación, habla de un "asistente de planificación con IA". Conecta directamente el problema con una solución tangible que ofreces. Evita jerga técnica compleja.
-    - Concluye el informe con una llamada a la acción potente y directa que invite al siguiente paso. Usa una frase como: "¿Quieres que empecemos a recuperar esas X horas este mismo mes? En GoiLab, somos especialistas en transformar estas ineficiencias en ahorro real. Te proponemos una sesión de análisis gratuita y sin compromiso para mostrarte cómo."
 
-El tono debe ser profesional, cercano y motivador. El objetivo es que {{{userName}}} lea el informe y piense: "Necesito contactar a GoiLab para solucionar esto AHORA".
+    - **Introducción:**
+        - Empieza saludando a {{{userName}}}. Ejemplo: \`"Hola {{{userName}}}, aquí tienes un pequeño resumen de lo que hemos hablado."\`
+        - Menciona que el objetivo no es juzgar. Ejemplo: \`"Este análisis no busca juzgar cómo se hacen las cosas, sino simplemente poner sobre la mesa una oportunidad de mejora que a veces, con el día a día, se nos pasa por alto."\`
+
+    - **Resumen de Tareas Detectadas:**
+        - Para cada tarea analizada, crea un pequeño bloque.
+        - **Ejemplo Tarea 1:**
+            -   **Tarea:** [Nombre de la tarea]
+            -   **Impacto mensual:** Aproximadamente [X] horas, que suponen unos [Y]€.
+            -   **Dificultades mencionadas:** [Resume brevemente las dificultades que comentó el usuario].
+
+    - **Reflexión General:**
+        - Presenta el impacto total de forma clara. Ejemplo: \`"En total, estas tareas suman unas [SUMA_HORAS] horas al mes. Es casi como tener a una persona trabajando [SUMA_HORAS / 8] jornadas completas solo para esto."\`
+        - Añade una reflexión final. Ejemplo: \`"Muchas veces, estas pequeñas tareas son las que, sumadas, más nos frenan. Ver los números ayuda a ponerlo en perspectiva."\`
+
+    - **Cierre Honesto (Llamada a la Acción sin Presión):**
+        - Haz una oferta de ayuda clara y sin compromiso.
+        - Ejemplo: \`"Si te gustaría explorar cómo se podrían recuperar parte de esas horas, me encantaría que tuviéramos una charla de 15-20 minutos. Sin ningún compromiso, solo para ver si podemos ayudarte. ¿Hablamos?"\`
+
+Recuerda: El informe debe ser conciso, fácil de leer y, sobre todo, útil para {{{userName}}}.
 `,
   model: 'googleai/gemini-2.5-flash',
 });

@@ -25,7 +25,6 @@ import { getAIQuestion, getAIReport } from "./actions";
 import type {
   Conversation,
   FormData,
-  Phase,
   Question,
 } from "@/types";
 import { Loader2, ArrowRight, Printer, Send, RefreshCcw, Download } from "lucide-react";
@@ -35,7 +34,7 @@ const initialQuestions: Question[] = [
   {
     id: "q1",
     phase: "basic_info",
-    text: "Para empezar, ¿cuál es tu nombre?",
+    text: "¿Para empezar, cuál es tu nombre?",
     type: "text",
     key: "userName",
   },
@@ -217,7 +216,7 @@ export default function EncuestaIaPage() {
   }
 
   const fetchNextQuestion = async (history: Conversation, currentData: Partial<FormData>) => {
-    setLoadingMessage("La IA está buscando la mejor pregunta para ti...");
+    setLoadingMessage("La IA está pensando la siguiente pregunta...");
     setIsLoading(true);
     try {
       const currentPhase = questions[currentQuestionIndex]?.phase ?? 'basic_info';
@@ -226,8 +225,8 @@ export default function EncuestaIaPage() {
         currentPhase: currentPhase,
         sector: currentData.sector,
       });
-
-      if (result.phase === 'result' || !result.question || history.length >= 12) {
+      
+      if (result.phase === 'result' || !result.question || history.length >= 20) {
         setPhase('report');
         setAnimationClass("animate-slide-in");
       } else {
@@ -386,7 +385,7 @@ export default function EncuestaIaPage() {
       const q = questions[currentQuestionIndex];
       const isNextDisabled = isLoading || (
         !q.optional && (
-            q.type === 'checkbox-suggestions' 
+            q.type === 'checkbox-suggestions' || q.type === 'multiple-choice'
                 ? selectedOptions.length === 0 && !currentAnswer.trim()
                 : !currentAnswer.trim()
         )
@@ -460,6 +459,22 @@ export default function EncuestaIaPage() {
                 disabled={isLoading}
               />
             </div>
+           ) : q.type === 'FREQUENCY_QUESTION' ? (
+             <RadioGroup
+                value={currentAnswer}
+                onValueChange={setCurrentAnswer}
+                disabled={isLoading}
+                className="space-y-3"
+            >
+                {["Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente"].map((option) => (
+                <div key={option} className="flex items-center space-x-3">
+                    <RadioGroupItem value={option} id={`${q.id}-${option}`} />
+                    <Label htmlFor={`${q.id}-${option}`} className="font-normal text-base cursor-pointer">
+                        {option}
+                    </Label>
+                </div>
+                ))}
+            </RadioGroup>
            ) : (
             <Input
               id={q.id}

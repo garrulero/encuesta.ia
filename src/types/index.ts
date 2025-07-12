@@ -1,8 +1,9 @@
 export type Phase =
   | "basic_info"
-  | "problem_detection"
-  | "time_calculation"
-  | "context_data"
+  | "task_identification"
+  | "task_analysis"
+  | "reflection"
+  | "next_action"
   | "result";
 
 export interface Question {
