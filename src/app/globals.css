@@ -4,54 +4,65 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
-    --card: 210 0% 85%;
-    --card-foreground: 0 0% 0%;
-    --popover: 210 0% 85%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 0 0% 0%;
+    /* 1. Paleta de Colores (GoiLab Design System) */
+    --color-background-app: 240 10% 3.9%;
+    --color-text-app: 0 0% 98%;
+
+    /* ShadCN Theme Variables */
+    --background: 48 67% 96%; /* --color-background: #FAF8F0; */
+    --foreground: 30 0% 29%; /* --color-text: #4A4A4A; */
+
+    --card: 40 43% 91%; /* --color-secondary-bg: #F5EBDD; */
+    --card-foreground: 30 0% 29%;
+
+    --popover: 48 67% 96%;
+    --popover-foreground: 30 0% 29%;
+    
+    --primary: 22 100% 50%; /* --color-accent: #FF5E00; */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 0% 95%;
-    --secondary-foreground: 0 0% 0%;
-    --muted: 210 0% 95%;
-    --muted-foreground: 0 0% 30%;
-    --accent: 210 0% 85%;
-    --accent-foreground: 0 0% 0%;
+
+    --secondary: 40 25% 85%; /* Lighter version of card for hover */
+    --secondary-foreground: 30 0% 29%;
+
+    --muted: 40 25% 85%;
+    --muted-foreground: 30 0% 45%;
+
+    --accent: 40 25% 85%;
+    --accent-foreground: 30 0% 29%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 0%;
-    --border-light: 0 0% 100%;
-    --border-dark: 0 0% 35%;
-    --input: 0 0% 100%;
-    --input-border: 0 0% 50%;
-    --ring: 0 0% 0%;
-    --radius: 0rem;
+
+    --border: 41 38% 82%; /* --color-border: #E0D6C1; */
+    --input: 41 38% 82%;
+    --ring: 22 100% 50%; /* --color-accent: #FF5E00; */
+    
+    --radius: 0.5rem; /* 8px */
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    /* Keeping dark mode as a fallback, but using light theme vars */
+    --background: 48 67% 96%;
+    --foreground: 30 0% 29%;
+    --card: 40 43% 91%;
+    --card-foreground: 30 0% 29%;
+    --popover: 48 67% 96%;
+    --popover-foreground: 30 0% 29%;
+    --primary: 22 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 25% 85%;
+    --secondary-foreground: 30 0% 29%;
+    --muted: 40 25% 85%;
+    --muted-foreground: 30 0% 45%;
+    --accent: 40 25% 85%;
+    --accent-foreground: 30 0% 29%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --border-light: 0 0% 25%;
-    --border-dark: 0 0% 0%;
-    --input: 0 0% 14.9%;
-    --input-border: 0 0% 25%;
-    --ring: 0 0% 83.1%;
+    --border: 41 38% 82%;
+    --input: 41 38% 82%;
+    --ring: 22 100% 50%;
+    
+    --radius: 0.5rem;
   }
 }
 
@@ -61,5 +72,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
   }
 }

@@ -30,6 +30,7 @@ import type {
 } from "@/types";
 import { Loader2, ArrowRight, Printer, Send, RefreshCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 const initialQuestions: Question[] = [
   {
@@ -77,6 +78,7 @@ export default function EncuestaIaPage() {
   const [consent, setConsent] = useState(false);
   const [phoneConsent, setPhoneConsent] = useState(false);
   const [animationClass, setAnimationClass] = useState("animate-slide-in");
+  const [progress, setProgress] = useState(0);
 
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
@@ -138,6 +140,17 @@ export default function EncuestaIaPage() {
         inputRef.current.focus();
     }
   }, [currentQuestionIndex, currentAppPhase]);
+
+  useEffect(() => {
+    if (currentAppPhase !== "survey") {
+      setProgress(0);
+      return;
+    }
+    const totalQuestions = questions.length;
+    const answeredQuestions = currentQuestionIndex;
+    const newProgress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+    setProgress(newProgress);
+  }, [currentQuestionIndex, questions, currentAppPhase]);
 
   const handleReset = useCallback(() => {
     setCurrentAppPhase("welcome");
@@ -206,11 +219,13 @@ export default function EncuestaIaPage() {
     if (isEndOfInitialQuestions) {
         fetchNextQuestion(updatedHistory, newFormData, 'task_identification');
     } else if (currentQuestionIndex >= questions.length - 1) {
-        if (finalAnswer === "Preparar el informe") {
-          setCurrentAppPhase("report");
+        let nextPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
+        if (finalAnswer === 'Analizar otra tarea') {
+          nextPhase = 'task_identification';
+        } else if (finalAnswer === 'Preparar el informe') {
+          setCurrentAppPhase('report');
           return;
         }
-        const nextPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
         fetchNextQuestion(updatedHistory, newFormData, nextPhase);
     } else {
         triggerAnimation(currentQuestionIndex + 1);
@@ -327,8 +342,7 @@ export default function EncuestaIaPage() {
   }
 
   const handleGenerateReport = async () => {
-    // SAFETY CHECK: Ensure there's enough conversation to generate a meaningful report.
-    if (conversationHistory.length <= 5) {
+    if (conversationHistory.length < 5) {
       toast({ title: "Datos insuficientes", description: "Es necesario responder a más preguntas para poder generar un informe.", variant: "destructive"});
       return;
     }
@@ -406,6 +420,7 @@ export default function EncuestaIaPage() {
     if (currentAppPhase === "welcome") {
       return (
         <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4 text-primary">GoiLab</h1>
             <h2 className="text-2xl font-bold mb-4">Diagnóstico de Eficiencia v2.0</h2>
             <p className="mb-6 max-w-md mx-auto">
                 Hola, soy una IA desarrollada por GoiLab. Mi objetivo es ayudarte a realizar un diagnóstico rápido de eficiencia en tu empresa.
@@ -432,7 +447,7 @@ export default function EncuestaIaPage() {
 
       return (
         <div key={q.id} className={`w-full ${animationClass}`}>
-          <Label htmlFor={q.id} className="block text-xl mb-6 text-left">
+          <Label htmlFor={q.id} className="block text-xl mb-6 text-left font-primary font-semibold">
             {q.text} {q.optional && <span className="text-sm text-muted-foreground">(opcional)</span>}
           </Label>
           {q.hint && <p className="text-sm text-muted-foreground mb-4">{q.hint}</p>}
@@ -543,7 +558,7 @@ export default function EncuestaIaPage() {
                 {report ? (
                     <div>
                         <h2 className="text-2xl font-bold mb-4">Tu informe está listo</h2>
-                        <div className="text-left whitespace-pre-wrap p-4 border-2 border-dashed border-black bg-white max-h-96 overflow-y-auto">
+                        <div className="text-left whitespace-pre-wrap p-4 bg-white rounded-lg border border-border max-h-96 overflow-y-auto">
                             {report}
                         </div>
                         <div className="mt-8 flex flex-wrap justify-center gap-4">
@@ -623,12 +638,12 @@ export default function EncuestaIaPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-accent p-4 sm:p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
       <AlertDialog open={isLoading}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex flex-col items-center gap-4 text-center">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               Procesando...
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center pt-2">
@@ -638,15 +653,13 @@ export default function EncuestaIaPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>encuesta.ia - Diagnóstico interactivo v2.0</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 sm:p-10 min-h-[350px] flex items-center justify-center">
+      <Card className="w-full max-w-2xl bg-card text-card-foreground rounded-lg shadow-lg">
+        {currentAppPhase === "survey" && <Progress value={progress} className="w-full" />}
+        <CardContent className="p-6 sm:p-10 min-h-[450px] flex items-center justify-center">
           {renderContent()}
         </CardContent>
         {currentAppPhase !== 'welcome' && (
-          <CardFooter className="justify-center border-t p-6">
+          <CardFooter className="justify-center border-t p-4">
               <Button variant="link" onClick={handleReset}>
                   <RefreshCcw className="mr-2 h-4 w-4" />
                   Reiniciar diagnóstico
@@ -654,11 +667,9 @@ export default function EncuestaIaPage() {
           </CardFooter>
         )}
       </Card>
-      <footer className="mt-4 text-xs text-foreground/50">
-        Una herramienta para detectar ineficiencias.
+      <footer className="mt-6 text-sm text-muted-foreground">
+        Una herramienta de <a href="https://goilab.com" target="_blank" rel="noopener noreferrer" className="font-bold text-primary hover:underline">GoiLab</a> para detectar ineficiencias.
       </footer>
     </main>
   );
 }
-
-    
