@@ -406,15 +406,16 @@ export default function EncuestaIaPage() {
     if (currentAppPhase === "welcome") {
       return (
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Bienvenido a encuesta.ia</h2>
-          <p className="mb-6">
-            Vamos a descubrir juntos algunas tareas de tu día a día que se podrían mejorar.
-            Será una conversación breve y sin tecnicismos.
-          </p>
-          <Button onClick={() => setCurrentAppPhase("survey")} size="lg">
-            Empezar Diagnóstico
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+            <h2 className="text-2xl font-bold mb-4">Diagnóstico de Eficiencia v2.0</h2>
+            <p className="mb-6 max-w-md mx-auto">
+                Hola, soy una IA desarrollada por GoiLab. Mi objetivo es ayudarte a realizar un diagnóstico rápido de eficiencia en tu empresa.
+                <br/><br/>
+                En 5 minutos, identificaremos juntos una tarea que te roba tiempo y calcularemos las horas y euros que podrías recuperar al mes. No busco venderte nada, solo ofrecerte claridad.
+            </p>
+            <Button onClick={() => setCurrentAppPhase("survey")} size="lg">
+                ¿Empezamos?
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
         </div>
       );
     }
@@ -639,7 +640,7 @@ export default function EncuestaIaPage() {
 
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>encuesta.ia - Diagnóstico interactivo v1.0</CardTitle>
+          <CardTitle>encuesta.ia - Diagnóstico interactivo v2.0</CardTitle>
         </CardHeader>
         <CardContent className="p-6 sm:p-10 min-h-[350px] flex items-center justify-center">
           {renderContent()}
@@ -659,3 +660,5 @@ export default function EncuestaIaPage() {
     </main>
   );
 }
+
+    

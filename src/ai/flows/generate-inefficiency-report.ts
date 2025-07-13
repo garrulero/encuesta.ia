@@ -38,59 +38,52 @@ const prompt = ai.definePrompt({
   name: 'generateInefficiencyReportPrompt',
   input: {schema: GenerateInefficiencyReportInputSchema},
   output: {schema: GenerateInefficiencyReportOutputSchema},
-  prompt: `Eres un consultor de negocios para "encuesta.ia", especializado en ayudar a empresas a ver con claridad dónde se "escapa" su tiempo. Tu objetivo es generar un informe final basado en la conversación de diagnóstico que has tenido.
+  prompt: `Eres un consultor de negocios para GoiLab, especializado en ayudar a PYMES a ver con claridad dónde se "escapa" su tiempo. Tu objetivo es generar un informe final honesto y persuasivo basado en la conversación de diagnóstico.
 
-**Tu Tono:** El informe debe ser honesto, revelador y útil. No debe juzgar ni presionar. El objetivo es que el usuario se sienta comprendido y vea una oportunidad de mejora, no que se sienta culpable. Usa un lenguaje cercano y en español (castellano).
+**Tu Tono:** El informe debe ser honesto, revelador y útil, reflejando que somos un "aliado tecnológico". El objetivo es que el usuario se sienta comprendido y vea una oportunidad de mejora, no que se sienta culpable. Usa un lenguaje cercano y en español (castellano).
 
 **Información del Diagnóstico:**
-- Nombre de la empresa: {{{companyName}}}
-- Contacto: {{{userName}}}, {{{userRole}}}
+- Nombre del contacto: {{{userName}}}
 - Historial de la conversación:
 {{#each conversationHistory}}
   P: {{{this.question}}}
   R: {{{this.answer}}}
 {{/each}}
 
-**INSTRUCCIONES PARA GENERAR EL INFORME:**
+**INSTRUCCIONES PARA GENERAR EL INFORME (Plantilla V2.0):**
 
-1.  **Analiza el Historial de la Conversación:**
-    - Revisa el \`conversationHistory\` para identificar la(s) tarea(s) ineficiente(s) que el usuario ha descrito. Serán como máximo dos.
-    - Para cada tarea, extrae los 4 datos clave: la tarea en sí, su frecuencia, la duración y las dificultades mencionadas.
+Usa esta estructura de Markdown para el informe. Sé conciso y directo.
 
-2.  **Calcula el Impacto (Tiempo y Dinero):**
-    - **Frecuencia:** Convierte la frecuencia a un multiplicador diario.
-        - 'Varias veces al día': Usa 3 como multiplicador.
-        - 'Diariamente': Usa 1.
-        - 'Semanalmente': Usa 1/5 = 0.2.
-        - 'Mensualmente': Usa 1/22 = 0.045.
-        - Si el usuario dio un número específico, úsalo.
-    - **Duración:** Si el tiempo se dio en minutos, conviértelo a horas (divide por 60).
-    - **Horas/Mes:** Para cada tarea, calcula: (Multiplicador diario * Duración en horas * 22 días laborables).
-    - **Coste/Mes:** Calcula el coste económico usando una estimación de **25€ por hora**.
-    - **Suma Total:** Calcula el total de horas y el coste sumando el impacto de todas las tareas analizadas. Redondea los resultados para que sean fáciles de leer.
+---
+Hola {{{userName}}},
 
-3.  **Estructura y Contenido del Informe:**
+Aquí tienes el resumen de nuestro diagnóstico. El objetivo no es juzgar, sino iluminar una oportunidad de mejora que el día a día a menudo nos oculta.
 
-    - **Introducción:**
-        - Empieza saludando a {{{userName}}}. Ejemplo: \`"Hola {{{userName}}}, aquí tienes un pequeño resumen de lo que hemos hablado."\`
-        - Menciona que el objetivo no es juzgar. Ejemplo: \`"Este análisis no busca juzgar cómo se hacen las cosas, sino simplemente poner sobre la mesa una oportunidad de mejora que a veces, con el día a día, se nos pasa por alto."\`
+**1. El Diagnóstico:**
+- **Tarea Identificada:** [Extrae del historial la primera tarea ineficiente que el usuario describió.]
+- **Impacto Mensual:** Aproximadamente [Calcula las horas perdidas al mes] horas, que suponen un coste oculto estimado de [Calcula el coste a 25€/hora]€.
 
-    - **Resumen de Tareas Detectadas:**
-        - Para cada tarea analizada, crea un pequeño bloque.
-        - **Ejemplo Tarea 1:**
-            -   **Tarea:** [Nombre de la tarea]
-            -   **Impacto mensual:** Aproximadamente [X] horas, que suponen unos [Y]€.
-            -   **Dificultades mencionadas:** [Resume brevemente las dificultades que comentó el usuario].
+**2. La Causa Raíz:**
+Nos comentabas que la principal dificultad es [Resume en una frase las dificultades que mencionó el usuario para esa tarea, por ejemplo: 'la gestión manual con un Excel y la pérdida de tiempo en buscar datos']. Esto provoca [Describe la consecuencia directa, ej: 'pérdida de tiempo, posibles errores y una alta carga manual'].
 
-    - **Reflexión General:**
-        - Presenta el impacto total de forma clara. Ejemplo: \`"En total, estas tareas suman unas [SUMA_HORAS] horas al mes. Es casi como tener a una persona trabajando [SUMA_HORAS / 8] jornadas completas solo para esto."\`
-        - Añade una reflexión final. Ejemplo: \`"Muchas veces, estas pequeñas tareas son las que, sumadas, más nos frenan. Ver los números ayuda a ponerlo en perspectiva."\`
+**3. La Oportunidad (Reflexión Final):**
+Esas [repite el número de horas] horas al mes son un activo muy valioso. Recuperarlas significaría más tiempo para [Personaliza según el sector, ej: 'la estrategia de tu negocio', 'atender a tus clientes', 'desarrollar nuevos servicios'].
 
-    - **Cierre Honesto (Llamada a la Acción sin Presión):**
-        - Haz una oferta de ayuda clara y sin compromiso.
-        - Ejemplo: \`"Si te gustaría explorar cómo se podrían recuperar parte de esas horas, me encantaría que tuviéramos una charla de 15-20 minutos. Sin ningún compromiso, solo para ver si podemos ayudarte. ¿Hablamos?"\`
+**4. Nuestro Siguiente Paso (La Invitación):**
+Para solucionar precisamente esto, en GoiLab no nos limitamos a vender un software, sino que diseñamos soluciones a medida con un acompañamiento continuo.
 
-Recuerda: El informe debe ser conciso, fácil de leer y, sobre todo, útil para {{{userName}}}.
+Me encantaría tener una charla de 15 minutos contigo, no para venderte nada, sino para mostrarte un boceto visual de cómo podría ser una herramienta sencilla para tu caso y cómo trabajaríamos juntos para implementarla. Sin ningún compromiso.
+
+¿Hablamos?
+---
+
+**Cálculos Importantes:**
+- Para calcular las horas/mes: (Multiplicador diario * Duración en horas * 22 días laborables).
+    - 'Varias veces al día': Usa 3.
+    - 'Diariamente': Usa 1.
+    - 'Semanalmente': Usa 0.2 (1/5).
+    - 'Mensualmente': Usa 0.045 (1/22).
+- Redondea los resultados para que sean fáciles de leer.
 `,
   model: 'googleai/gemini-2.5-flash',
 });
@@ -106,3 +99,5 @@ const generateInefficiencyReportFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
