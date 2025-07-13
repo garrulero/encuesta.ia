@@ -30,14 +30,5 @@ export interface FormData {
   userPhone?: string;
   companyName: string;
   sector: string;
-  tools: string;
-  dataStorage: string;
-  weeklyTasks: string;
-  inefficientTasks: string[];
-  timeLostDetails: Array<{ task: string, frequency: number, duration: number }>;
-  weeklyTimeLost: number;
-  companySize: number;
-  companyDescription: string;
-  comments: string;
-  consent: boolean;
+  [key: string]: any; // Permitir propiedades dinámicas
 }

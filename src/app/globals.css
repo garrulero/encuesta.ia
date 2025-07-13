@@ -89,4 +89,13 @@
   .input {
      @apply bg-background;
   }
+
+  /* Añadir animaciones que faltan */
+  .animate-slide-in {
+    animation: slide-in 0.5s ease-out forwards;
+  }
+
+  .animate-slide-out {
+    animation: slide-out 0.5s ease-out forwards;
+  }
 }
