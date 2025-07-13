@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
@@ -12,6 +13,10 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Inicializar Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
 // Middleware
 app.use(cors());
@@ -38,119 +43,214 @@ db.serialize(() => {
   `);
 });
 
-// Simulación de las funciones de IA (reemplazar con llamadas reales a la IA)
-const simulateAIQuestion = async (input) => {
-  // Aquí deberías integrar con tu servicio de IA real
-  // Por ahora, devolvemos respuestas simuladas
+// Función para generar preguntas con Gemini AI
+const generateAIQuestion = async (input) => {
+  const { conversationHistory, currentPhase, sector } = input;
   
-  const { conversationHistory, currentPhase } = input;
+  let systemPrompt = "";
   
   if (currentPhase === 'task_identification') {
+    systemPrompt = `Eres un consultor experto en eficiencia empresarial. Tu objetivo es identificar tareas ineficientes en empresas del sector ${sector}.
+
+CONTEXTO: Estás realizando un diagnóstico de eficiencia. Ya tienes información básica del usuario.
+
+OBJETIVO: Generar UNA pregunta para identificar tareas repetitivas o ineficientes.
+
+INSTRUCCIONES:
+- Haz UNA pregunta específica sobre tareas que consumen tiempo innecesario
+- Usa un tono conversacional y cercano
+- Enfócate en tareas del día a día del sector ${sector}
+- La pregunta debe ser abierta para que describan sus problemas
+
+FORMATO DE RESPUESTA (JSON):
+{
+  "responses": [{
+    "question": "tu pregunta aquí",
+    "phase": "task_identification",
+    "type": "textarea"
+  }]
+}
+
+Responde SOLO con el JSON, sin explicaciones adicionales.`;
+  }
+  
+  else if (currentPhase === 'task_analysis') {
+    const lastAnswer = conversationHistory[conversationHistory.length - 1]?.answer || '';
+    
+    systemPrompt = `Eres un consultor experto en eficiencia empresarial. Estás analizando una tarea específica que el usuario identificó como problemática.
+
+TAREA IDENTIFICADA: "${lastAnswer}"
+
+OBJETIVO: Generar UNA pregunta para profundizar en el análisis de esta tarea específica.
+
+PREGUNTAS YA HECHAS: ${conversationHistory.map(h => h.question).join(', ')}
+
+INSTRUCCIONES:
+- Haz UNA pregunta específica sobre: frecuencia, tiempo que toma, método actual, o dificultades
+- NO repitas preguntas ya hechas
+- Usa un tono conversacional
+- La pregunta debe ayudar a cuantificar el impacto de la tarea
+
+TIPOS DE PREGUNTA DISPONIBLES:
+- "FREQUENCY_QUESTION": para preguntar frecuencia (opciones: "Varias veces al día", "Diariamente", "Semanalmente", "Mensualmente")
+- "text": para respuestas cortas
+- "textarea": para respuestas largas
+
+FORMATO DE RESPUESTA (JSON):
+{
+  "responses": [{
+    "question": "tu pregunta aquí",
+    "phase": "task_analysis", 
+    "type": "text|textarea|FREQUENCY_QUESTION"
+  }]
+}
+
+Responde SOLO con el JSON, sin explicaciones adicionales.`;
+  }
+  
+  else if (currentPhase === 'next_action') {
+    systemPrompt = `Eres un consultor experto. Has analizado una tarea ineficiente y ahora debes ofrecer opciones al usuario.
+
+INSTRUCCIONES:
+- Genera una reflexión breve sobre el tiempo/dinero perdido
+- Ofrece dos opciones: analizar otra tarea o generar el informe
+
+FORMATO DE RESPUESTA (JSON):
+{
+  "responses": [
+    {
+      "question": "Reflexión sobre el impacto calculado de la tarea analizada",
+      "phase": "reflection"
+    },
+    {
+      "question": "¿Quieres que analicemos otra tarea que también te esté quitando tiempo, o prefieres que paremos aquí y te prepare un pequeño informe con lo que hemos visto?",
+      "phase": "next_action",
+      "type": "multiple-choice",
+      "options": ["Analizar otra tarea", "Preparar el informe"]
+    }
+  ]
+}
+
+Responde SOLO con el JSON, sin explicaciones adicionales.`;
+  }
+  
+  else {
+    // Finalizar si no hay más fases
     return {
       responses: [{
-        question: "¿Qué tareas de tu día a día te parecen más repetitivas, pesadas o que consumen más tiempo del que deberían?",
-        phase: "task_identification",
-        type: "textarea"
+        question: "",
+        phase: "result"
       }]
     };
   }
-  
-  if (currentPhase === 'task_analysis') {
-    const analysisQuestions = [
-      {
-        question: "¿Con qué frecuencia dirías que haces esta tarea?",
-        phase: "task_analysis",
-        type: "FREQUENCY_QUESTION"
-      },
-      {
-        question: "¿Y cuánto tiempo te lleva cada vez que la haces? (Ej: '15 minutos', 'media hora'...)",
-        phase: "task_analysis",
-        type: "text"
-      },
-      {
-        question: "¿Cómo sueles hacerla? (Ej: con papel y boli, un Excel, por WhatsApp...)",
-        phase: "task_analysis",
-        type: "textarea"
-      },
-      {
-        question: "Para terminar con esta tarea, ¿qué dificultades o problemas te sueles encontrar?",
-        phase: "task_analysis",
-        type: "textarea"
-      }
-    ];
+
+  try {
+    const result = await model.generateContent(systemPrompt);
+    const response = await result.response;
+    const text = response.text();
     
-    // Determinar qué pregunta de análisis corresponde
-    const taskAnalysisCount = conversationHistory.filter(entry => 
-      entry.question.includes('frecuencia') || 
-      entry.question.includes('tiempo te lleva') ||
-      entry.question.includes('Cómo sueles') ||
-      entry.question.includes('dificultades')
-    ).length;
+    // Limpiar la respuesta y parsear JSON
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+    const parsedResponse = JSON.parse(cleanText);
     
-    if (taskAnalysisCount < analysisQuestions.length) {
+    return parsedResponse;
+  } catch (error) {
+    console.error('Error with Gemini AI:', error);
+    
+    // Fallback en caso de error
+    if (currentPhase === 'task_identification') {
       return {
-        responses: [analysisQuestions[taskAnalysisCount]]
-      };
-    } else {
-      // Pasar a reflexión
-      return {
-        responses: [
-          {
-            question: "Gracias. He calculado que solo esa tarea te está llevando unas 8 horas al mes (aproximadamente 200€). Para que te hagas una idea, es casi una semana de trabajo completa que podrías dedicar a hacer crecer tu negocio. ¿Te habías parado a pensarlo?",
-            phase: "reflection"
-          },
-          {
-            question: "¿Quieres que analicemos otra tarea que también te esté quitando tiempo, o prefieres que paremos aquí y te prepare un pequeño informe con lo que hemos visto?",
-            phase: "next_action",
-            type: "multiple-choice",
-            options: ["Analizar otra tarea", "Preparar el informe"]
-          }
-        ]
+        responses: [{
+          question: "¿Qué tareas de tu día a día te parecen más repetitivas, pesadas o que consumen más tiempo del que deberían?",
+          phase: "task_identification",
+          type: "textarea"
+        }]
       };
     }
+    
+    throw error;
   }
-  
-  // Respuesta por defecto para finalizar
-  return {
-    responses: [{
-      question: "",
-      phase: "result"
-    }]
-  };
 };
 
-const simulateAIReport = async (input) => {
-  const { userName, companyName, conversationHistory } = input;
+// Función para generar reportes con Gemini AI
+const generateAIReport = async (input) => {
+  const { userName, userRole, companyName, conversationHistory } = input;
   
-  // Simulación de un reporte generado por IA
-  const report = `Hola ${userName},
+  const systemPrompt = `Eres un consultor experto en eficiencia empresarial de GoiLab. Debes generar un informe personalizado basado en la conversación.
+
+INFORMACIÓN DEL CLIENTE:
+- Nombre: ${userName}
+- Cargo: ${userRole}
+- Empresa: ${companyName}
+
+CONVERSACIÓN COMPLETA:
+${conversationHistory.map(h => `P: ${h.question}\nR: ${h.answer}`).join('\n\n')}
+
+INSTRUCCIONES PARA EL INFORME:
+1. **Tono profesional pero cercano**
+2. **Estructura clara con secciones numeradas**
+3. **Cálculos específicos de tiempo y dinero perdido**
+4. **Identificar la causa raíz del problema**
+5. **Terminar con una invitación a una charla de 15 minutos**
+
+ESTRUCTURA REQUERIDA:
+**1. El Diagnóstico:**
+- Tarea identificada
+- Impacto mensual en horas y euros
+
+**2. La Causa Raíz:**
+- Análisis del problema principal
+
+**3. La Oportunidad:**
+- Reflexión sobre el valor del tiempo recuperado
+
+**4. Nuestro Siguiente Paso:**
+- Invitación a charla de 15 minutos sin compromiso
+
+IMPORTANTE:
+- Usa datos específicos de la conversación
+- Calcula impacto realista basado en las respuestas
+- Mantén el enfoque en GoiLab como solución
+- NO uses markdown, solo texto plano con formato simple
+
+Genera el informe completo:`;
+
+  try {
+    const result = await model.generateContent(systemPrompt);
+    const response = await result.response;
+    const report = response.text();
+    
+    return { report };
+  } catch (error) {
+    console.error('Error generating AI report:', error);
+    
+    // Fallback en caso de error
+    const fallbackReport = `Hola ${userName},
 
 Aquí tienes el resumen de nuestro diagnóstico. El objetivo no es juzgar, sino iluminar una oportunidad de mejora que el día a día a menudo nos oculta.
 
 **1. El Diagnóstico:**
-- **Tarea Identificada:** Gestión manual de contactos de clientes
-- **Impacto Mensual:** Aproximadamente 8 horas, que suponen un coste oculto estimado de 200€.
+Hemos identificado tareas que están consumiendo tiempo valioso en ${companyName}.
 
 **2. La Causa Raíz:**
-Nos comentabas que la principal dificultad es la gestión manual con un Excel y la pérdida de tiempo en buscar datos. Esto provoca pérdida de tiempo, posibles errores y una alta carga manual.
+Los procesos manuales y la falta de automatización están generando ineficiencias.
 
-**3. La Oportunidad (Reflexión Final):**
-Esas 8 horas al mes son un activo muy valioso. Recuperarlas significaría más tiempo para la estrategia de tu negocio.
+**3. La Oportunidad:**
+Recuperar ese tiempo significaría más capacidad para hacer crecer tu negocio.
 
-**4. Nuestro Siguiente Paso (La Invitación):**
-Para solucionar precisamente esto, en GoiLab no nos limitamos a vender un software, sino que diseñamos soluciones a medida con un acompañamiento continuo.
-
-Me encantaría tener una charla de 15 minutos contigo, no para venderte nada, sino para mostrarte un boceto visual de cómo podría ser una herramienta sencilla para tu caso y cómo trabajaríamos juntos para implementarla. Sin ningún compromiso.
+**4. Nuestro Siguiente Paso:**
+En GoiLab diseñamos soluciones a medida con acompañamiento continuo. Me encantaría tener una charla de 15 minutos contigo para mostrarte cómo podríamos ayudarte.
 
 ¿Hablamos?`;
 
-  return { report };
+    return { report: fallbackReport };
+  }
 };
 
 // Rutas de la API
 app.post('/api/ai/question', async (req, res) => {
   try {
-    const result = await simulateAIQuestion(req.body);
+    const result = await generateAIQuestion(req.body);
     res.json(result);
   } catch (error) {
     console.error('Error generating AI question:', error);
@@ -160,7 +260,7 @@ app.post('/api/ai/question', async (req, res) => {
 
 app.post('/api/ai/report', async (req, res) => {
   try {
-    const result = await simulateAIReport(req.body);
+    const result = await generateAIReport(req.body);
     
     // Guardar en base de datos
     const { userName, userRole, userEmail, userPhone, companyName, conversationHistory } = req.body;
