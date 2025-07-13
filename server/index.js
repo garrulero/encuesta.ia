@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3001;
 
 // Inicializar Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // Middleware
 app.use(cors());
