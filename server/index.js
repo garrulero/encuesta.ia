@@ -300,6 +300,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Ruta raíz
+app.get('/', (req, res) => {
+  res.json({ message: 'Servidor de diagnóstico de eficiencia funcionando', status: 'OK' });
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });
