@@ -217,16 +217,17 @@ export default function EncuestaIaPage() {
     const isEndOfInitialQuestions = currentQuestion.phase === 'basic_info' && currentQuestionIndex === initialQuestions.length - 1;
 
     if (isEndOfInitialQuestions) {
-        fetchNextQuestion(updatedHistory, newFormData, 'task_identification');
+        let nextPhase = 'task_identification';
+        fetchNextQuestion(updatedHistory, newFormData, nextPhase);
     } else if (currentQuestionIndex >= questions.length - 1) {
-        let nextPhase = questions[questions.length - 1]?.phase ?? 'basic_info';
         if (finalAnswer === 'Analizar otra tarea') {
-          nextPhase = 'task_identification';
+          fetchNextQuestion(updatedHistory, newFormData, 'task_identification');
         } else if (finalAnswer === 'Preparar el informe') {
           setCurrentAppPhase('report');
-          return;
+        } else {
+          // This case handles the end of an analysis flow, moving to reflection/next_action
+          fetchNextQuestion(updatedHistory, newFormData, currentQuestion.phase);
         }
-        fetchNextQuestion(updatedHistory, newFormData, nextPhase);
     } else {
         triggerAnimation(currentQuestionIndex + 1);
     }
@@ -266,6 +267,18 @@ export default function EncuestaIaPage() {
       }));
 
       const firstNewQuestion = newQuestionsFromAI[0];
+      
+      // SAFETY CHECK: Prevent moving to report phase prematurely.
+      if ((firstNewQuestion.phase === 'result' || !firstNewQuestion.question) && history.length < 20) {
+        toast({
+          title: "Error de la IA",
+          description: "La IA ha intentado terminar la conversación antes de tiempo. Por favor, inténtalo de nuevo.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        // Do not proceed
+        return;
+      }
       
       if (firstNewQuestion.phase === 'reflection') {
         setLoadingMessage(firstNewQuestion.text);
@@ -459,7 +472,7 @@ export default function EncuestaIaPage() {
               value={currentAnswer}
               onChange={(e) => setCurrentAnswer(e.target.value)}
               placeholder="Escribe tu respuesta aquí..."
-              className="min-h-[120px]"
+              className="min-h-[120px] input"
               disabled={isLoading}
             />
           ) : q.type === 'multiple-choice' ? (
@@ -509,7 +522,7 @@ export default function EncuestaIaPage() {
                 value={currentAnswer}
                 onChange={(e) => setCurrentAnswer(e.target.value)}
                 placeholder="Añade aquí otras tareas (una por línea)..."
-                className="min-h-[100px]"
+                className="min-h-[100px] input"
                 disabled={isLoading}
               />
             </div>
@@ -539,6 +552,7 @@ export default function EncuestaIaPage() {
               placeholder="Tu respuesta..."
               disabled={isLoading}
               onKeyDown={(e) => e.key === 'Enter' && !isNextDisabled && handleNext()}
+              className="input"
             />
           )}
 
@@ -590,6 +604,7 @@ export default function EncuestaIaPage() {
                                     value={formData.userEmail || ''}
                                     onChange={(e) => setFormData({...formData, userEmail: e.target.value})}
                                     disabled={isLoading}
+                                    className="input"
                                 />
                             </div>
                             <div className="flex items-center space-x-2">
@@ -616,6 +631,7 @@ export default function EncuestaIaPage() {
                                             value={formData.userPhone || ''}
                                             onChange={(e) => setFormData({...formData, userPhone: e.target.value})}
                                             disabled={isLoading}
+                                            className="input"
                                         />
                                     </div>
                                 )}
@@ -653,9 +669,9 @@ export default function EncuestaIaPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card className="w-full max-w-2xl bg-card text-card-foreground rounded-lg shadow-lg">
-        {currentAppPhase === "survey" && <Progress value={progress} className="w-full" />}
-        <CardContent className="p-6 sm:p-10 min-h-[450px] flex items-center justify-center">
+      <Card className="w-full max-w-2xl text-card-foreground survey-container">
+        {currentAppPhase === "survey" && <Progress value={progress} className="w-full mb-6" />}
+        <CardContent className="p-0 sm:p-4 min-h-[450px] flex items-center justify-center">
           {renderContent()}
         </CardContent>
         {currentAppPhase !== 'welcome' && (
