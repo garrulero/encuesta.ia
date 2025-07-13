@@ -5,34 +5,18 @@ import { generateInefficiencyReport, type GenerateInefficiencyReportInput, type 
 
 export async function getAIQuestion(input: GenerateContextAwareQuestionInput): Promise<GenerateContextAwareQuestionOutput> {
     try {
-        if (!process.env.GOOGLE_GENAI_API_KEY) {
-            throw new Error('API key no configurada');
-        }
-    return await generateContextAwareQuestion(input);
+        return await generateContextAwareQuestion(input);
     } catch (error) {
         console.error('Error en getAIQuestion:', error);
-        // Fallback para desarrollo
-        return {
-            responses: [{
-                question: "¿Podrías contarme más sobre las tareas que consumen más tiempo en tu día a día?",
-                phase: "task_identification",
-                type: "textarea"
-            }]
-        };
+        throw error;
     }
 }
 
 export async function getAIReport(input: GenerateInefficiencyReportInput): Promise<GenerateInefficiencyReportOutput> {
     try {
-        if (!process.env.GOOGLE_GENAI_API_KEY) {
-            throw new Error('API key no configurada');
-        }
-    return await generateInefficiencyReport(input);
+        return await generateInefficiencyReport(input);
     } catch (error) {
         console.error('Error en getAIReport:', error);
-        // Fallback para desarrollo
-        return {
-            report: `Hola ${input.userName},\n\nGracias por completar el diagnóstico. Hemos detectado algunas áreas de mejora en tu empresa ${input.companyName}.\n\nEste es un informe de ejemplo mientras configuramos la conexión con la IA.\n\n¿Te gustaría que te contactemos para discutir las oportunidades de mejora?`
-        };
+        throw error;
     }
 }
