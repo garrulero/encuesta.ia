@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3001;
 
 // Configurar DeepSeek client
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.DEEPSEEK_API_KEY || 'sk-d2d63a5b51df4f8c80caeffd2c79c733',
   baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1'
 });
 
