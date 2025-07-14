@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 // Cargar variables de entorno
-dotenv.config();
+dotenv.config({ path: './server/.env' });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
